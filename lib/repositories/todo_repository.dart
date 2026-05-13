@@ -5,4 +5,5 @@ abstract class TodoRepository {
   Future<void> saveTodo(Todo todo);
   Future<void> updateTodo(Todo todo);
   Future<void> deleteTodo(String id);
+  Future<void> clearAll();
 }

@@ -40,6 +40,12 @@ class LocalTodoRepository implements TodoRepository {
     await _saveToDisk(todos);
   }
 
+  @override
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
+  }
+
   Future<void> _saveToDisk(List<Todo> todos) async {
     final prefs = await SharedPreferences.getInstance();
     final String encoded = json.encode(todos.map((t) => t.toMap()).toList());

@@ -4,9 +4,12 @@ import '../models/todo_model.dart';
 import '../providers/theme_provider.dart';
 import '../providers/todo_provider.dart';
 import 'attendance_calendar_screen.dart';
+import 'service_report_screen.dart';
 import '../widgets/add_todo_dialog.dart';
 import '../widgets/todo_item.dart';
 import 'theme_settings_screen.dart';
+
+import '../widgets/tutorial_guide.dart';
 
 enum TodoFilter { all, active, completed }
 
@@ -20,6 +23,8 @@ class TodoListScreen extends StatefulWidget {
 class _TodoListScreenState extends State<TodoListScreen> {
   TodoFilter _filter = TodoFilter.all;
   bool _tipsChecked = false;
+  int _currentIndex = 0;
+  bool _showTour = false;
 
   @override
   void didChangeDependencies() {
@@ -33,24 +38,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
     if (!settings.isLoaded) return;
     _tipsChecked = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      if (context.read<ThemeProvider>().hasSeenTips) return;
-
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        builder: (context) => const _TipsSheet(),
-      );
-
-      if (mounted) {
-        await context.read<ThemeProvider>().markTipsSeen();
-      }
-    });
+    if (!settings.hasSeenTips) {
+      setState(() => _showTour = true);
+    }
   }
 
   @override
@@ -63,7 +53,97 @@ class _TodoListScreenState extends State<TodoListScreen> {
     final completedCount = todoProvider.todos.length - activeCount;
 
     return Scaffold(
-      body: Container(
+      body: Stack(
+        children: [
+          _buildBody(todoProvider, settings, filteredTodos, activeCount, completedCount),
+          if (_showTour)
+            TutorialOverlay(
+              steps: const [
+                TutorialStep(
+                  title: 'Welcome to Premium Todo',
+                  message: 'This is your focused space for productivity. Let\'s explore!',
+                  alignment: Alignment.center,
+                  icon: Icons.auto_awesome_rounded,
+                ),
+                TutorialStep(
+                  title: 'Quick Actions',
+                  message: 'Access your settings, service calendar, and add tasks quickly from here.',
+                  alignment: Alignment.topRight,
+                  icon: Icons.touch_app_rounded,
+                ),
+                TutorialStep(
+                  title: 'Smart Navigation',
+                  message: 'Switch between your Task Board, Service Attendance, and Earnings Reports.',
+                  alignment: Alignment.bottomCenter,
+                  icon: Icons.navigation_rounded,
+                ),
+                TutorialStep(
+                  title: 'Ready to start?',
+                  message: 'Tap the "+" button to capture your first task and stay organized!',
+                  alignment: Alignment.bottomRight,
+                  icon: Icons.add_task_rounded,
+                ),
+              ],
+              onFinish: () async {
+                setState(() => _showTour = false);
+                await context.read<ThemeProvider>().markTipsSeen();
+              },
+            ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+      floatingActionButton: _currentIndex == 0 ? (settings.compactMode
+          ? FloatingActionButton(
+              onPressed: () => _showAddTodoDialog(context),
+              child: const Icon(Icons.add_task_rounded),
+            )
+          : FloatingActionButton.extended(
+              onPressed: () => _showAddTodoDialog(context),
+              label: const Text('Add task'),
+              icon: const Icon(Icons.add_task_rounded),
+              elevation: 4,
+            )) : null,
+    );
+  }
+
+  Widget _buildBody(TodoProvider todoProvider, ThemeProvider settings, List<Todo> filteredTodos, int activeCount, int completedCount) {
+    return IndexedStack(
+      index: _currentIndex,
+      children: [
+        _buildTasksList(todoProvider, settings, filteredTodos, activeCount, completedCount),
+        const AttendanceCalendarScreen(),
+        const ServiceReportScreen(),
+      ],
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.task_alt_rounded),
+          label: 'Tasks',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.calendar_month_rounded),
+          label: 'Calendar',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.bar_chart_rounded),
+          label: 'Reports',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTasksList(TodoProvider todoProvider, ThemeProvider settings, List<Todo> filteredTodos, int activeCount, int completedCount) {
+    return Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -99,6 +179,25 @@ class _TodoListScreenState extends State<TodoListScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: const DecorationImage(
+                                        image: AssetImage('assets/images/logo.png'),
+                                        fit: BoxFit.cover,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withAlpha(20),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   Text(
                                     'My Tasks',
                                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -122,6 +221,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                               backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                               foregroundColor: Theme.of(context).colorScheme.onSurface,
                               onPressed: () => _openAttendanceCalendar(context),
+                              tooltip: 'Open Service Calendar',
                             ),
                             const SizedBox(width: 10),
                             _HeaderActionButton(
@@ -129,6 +229,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                               backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                               foregroundColor: Theme.of(context).colorScheme.onSurface,
                               onPressed: () => _showSettingsSheet(context),
+                              tooltip: 'App Settings',
                             ),
                             const SizedBox(width: 10),
                             _HeaderActionButton(
@@ -137,6 +238,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                               foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                               onPressed: () => _showAddTodoDialog(context),
                               iconSize: 28,
+                              tooltip: 'Quick Add Task',
                             ),
                           ],
                         ),
@@ -193,20 +295,8 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   ),
               ],
             ),
-          ),
         ),
       ),
-      floatingActionButton: settings.compactMode
-          ? FloatingActionButton(
-              onPressed: () => _showAddTodoDialog(context),
-              child: const Icon(Icons.add_task_rounded),
-            )
-          : FloatingActionButton.extended(
-              onPressed: () => _showAddTodoDialog(context),
-              label: const Text('Add task'),
-              icon: const Icon(Icons.add_task_rounded),
-              elevation: 4,
-            ),
     );
   }
 
@@ -245,7 +335,14 @@ class _TodoListScreenState extends State<TodoListScreen> {
   void _showSettingsSheet(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => const ThemeSettingsScreen(),
+        builder: (context) => ThemeSettingsScreen(
+          onStartTour: () {
+            Navigator.pop(context);
+            setState(() {
+              _showTour = true;
+            });
+          },
+        ),
       ),
     );
   }
@@ -509,84 +606,168 @@ class _TipsBanner extends StatelessWidget {
   }
 }
 
-class _TipsSheet extends StatelessWidget {
-  const _TipsSheet();
+class _TipsSheet extends StatefulWidget {
+  const _TipsSheet({super.key});
+
+  @override
+  State<_TipsSheet> createState() => _TipsSheetState();
+}
+
+class _TipsSheetState extends State<_TipsSheet> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  final List<_TourStep> _steps = [
+    const _TourStep(
+      icon: Icons.auto_awesome_rounded,
+      title: 'Welcome to Todo Board',
+      description: 'Your premium space for productivity. Let\'s get you started with a quick tour.',
+    ),
+    const _TourStep(
+      icon: Icons.add_task_rounded,
+      title: 'Quick Capture',
+      description: 'Tap the "+" button to add tasks instantly. You can add titles, descriptions, and even set reminders.',
+    ),
+    const _TourStep(
+      icon: Icons.payments_rounded,
+      title: 'Service & Reports',
+      description: 'Track earnings and sessions with the Service Calendar. View detailed financial reports anytime.',
+    ),
+    const _TourStep(
+      icon: Icons.tune_rounded,
+      title: 'Personalize Everything',
+      description: 'Change currencies, toggle compact mode, or adjust colors in Settings to match your workflow.',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome to your todo board',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+    return Container(
+      height: 480,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _currentPage = index),
+              itemCount: _steps.length,
+              itemBuilder: (context, index) {
+                final step = _steps[index];
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withAlpha(80),
+                        shape: BoxShape.circle,
                       ),
-                      Text(
-                        'A few quick tips to get moving faster',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      child: Icon(
+                        step.icon,
+                        size: 64,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      step.title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        step.description,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: colorScheme.onSurfaceVariant,
+                              height: 1.5,
                             ),
                       ),
-                    ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: List.generate(
+                  _steps.length,
+                  (index) => Container(
+                    width: _currentPage == index ? 24 : 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: _currentPage == index ? colorScheme.primary : colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _TipRow(
-              icon: Icons.add_task_rounded,
-              title: 'Add fast',
-              body: 'Use the add button to capture tasks quickly.',
-            ),
-            const SizedBox(height: 10),
-            _TipRow(
-              icon: Icons.filter_alt_rounded,
-              title: 'Focus easily',
-              body: 'Switch between All, Active, and Done to keep attention on the right work.',
-            ),
-            const SizedBox(height: 10),
-            _TipRow(
-              icon: Icons.tune_rounded,
-              title: 'Tune the layout',
-              body: 'Open Settings to make the list compact or hide extra details.',
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Get started'),
-            ),
-          ],
-        ),
+              ),
+              Row(
+                children: [
+                  if (_currentPage < _steps.length - 1)
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Skip'),
+                    ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      if (_currentPage < _steps.length - 1) {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text(_currentPage == _steps.length - 1 ? 'Get Started' : 'Next'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
+}
+
+class _TourStep {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _TourStep({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
 }
 
 class _TipRow extends StatelessWidget {
@@ -645,6 +826,7 @@ class _HeaderActionButton extends StatelessWidget {
   final Color foregroundColor;
   final VoidCallback onPressed;
   final double iconSize;
+  final String? tooltip;
 
   const _HeaderActionButton({
     required this.icon,
@@ -652,11 +834,12 @@ class _HeaderActionButton extends StatelessWidget {
     required this.foregroundColor,
     required this.onPressed,
     this.iconSize = 24,
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    Widget button = Container(
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
@@ -670,5 +853,13 @@ class _HeaderActionButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (tooltip != null) {
+      return Tooltip(
+        message: tooltip!,
+        child: button,
+      );
+    }
+    return button;
   }
 }

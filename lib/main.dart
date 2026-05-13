@@ -78,6 +78,21 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: colorScheme.inverseSurface.withAlpha(230),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: TextStyle(
+          color: colorScheme.onInverseSurface,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.all(8),
+        waitDuration: const Duration(milliseconds: 500),
+        showDuration: const Duration(seconds: 2),
+      ),
     );
   }
 

@@ -19,6 +19,7 @@ class TodoAttendanceRecord {
   final DateTime date;
   final AttendanceStatus status;
   final String note;
+  final double? price;
   final DateTime createdAt;
 
   const TodoAttendanceRecord({
@@ -26,6 +27,7 @@ class TodoAttendanceRecord {
     required this.date,
     required this.status,
     this.note = '',
+    this.price,
     required this.createdAt,
   });
 
@@ -35,6 +37,7 @@ class TodoAttendanceRecord {
       'date': DateTime(date.year, date.month, date.day).toIso8601String(),
       'status': status.name,
       'note': note,
+      if (price != null) 'price': price,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -46,6 +49,7 @@ class TodoAttendanceRecord {
       date: DateTime(date.year, date.month, date.day),
       status: attendanceStatusFromString(map['status'] ?? 'present'),
       note: map['note'] ?? '',
+      price: (map['price'] as num?)?.toDouble(),
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }

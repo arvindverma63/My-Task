@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../models/todo_model.dart';
 import '../models/todo_field.dart';
 import '../providers/theme_provider.dart';
 import '../providers/todo_provider.dart';
@@ -24,11 +25,14 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _reminderEnabled = false;
   DateTime? _reminderAt;
+  TodoType _type = TodoType.task;
+  final _priceController = TextEditingController();
 
   @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
+    _priceController.dispose();
     for (final field in _fields) {
       field.dispose();
     }
@@ -80,48 +84,69 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(14),
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            Icons.add_task_rounded,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.add_task_rounded,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'New task',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.3,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'New task',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Keep it short, clear, and useful',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              Text(
+                                'Keep it short, clear, and useful',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SegmentedButton<TodoType>(
+                      segments: const [
+                        ButtonSegment(
+                          value: TodoType.task,
+                          label: Text('Task'),
+                          icon: Icon(Icons.task_alt_rounded),
+                        ),
+                        ButtonSegment(
+                          value: TodoType.service,
+                          label: Text('Service'),
+                          icon: Icon(Icons.cleaning_services_rounded),
+                        ),
+                      ],
+                      selected: {_type},
+                      onSelectionChanged: (value) {
+                        setState(() {
+                          _type = value.first;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 18),
                   TextField(
                     controller: _titleController,
                     autofocus: true,
@@ -140,6 +165,19 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
                       hintText: 'Optional notes or context',
                     ),
                   ),
+                  if (_type == TodoType.service) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _priceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Estimated price / salary per session',
+                        hintText: 'e.g. 50.0',
+                        prefixIcon: const Icon(Icons.payments_rounded),
+                        prefixText: '${settings.currency.symbol} ',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   _ReminderCard(
                     enabled: _reminderEnabled,
@@ -254,6 +292,8 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
                       final todo = await Provider.of<TodoProvider>(context, listen: false).addTodo(
                         title,
                         _descController.text.trim(),
+                        type: _type,
+                        basePrice: double.tryParse(_priceController.text),
                         customFields: customFields,
                         reminderAt: _reminderEnabled ? _reminderAt : null,
                       );

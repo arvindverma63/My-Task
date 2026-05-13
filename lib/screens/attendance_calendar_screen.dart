@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/todo_activity.dart';
 import '../models/todo_attendance.dart';
 import '../models/todo_model.dart';
+import '../providers/theme_provider.dart';
 import '../providers/todo_provider.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
@@ -18,16 +19,20 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _selectedDate = DateTime.now();
   final TextEditingController _activityController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
 
   @override
   void dispose() {
     _activityController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final todos = context.watch<TodoProvider>().todos;
+    final todoProvider = context.watch<TodoProvider>();
+    final settings = context.watch<ThemeProvider>();
+    final todos = todoProvider.todos;
     final serviceTodos = todos;
     if (serviceTodos.isEmpty) {
       return Scaffold(
@@ -40,7 +45,12 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       );
     }
 
-    _selectedTodoId ??= serviceTodos.first.id;
+    if (_selectedTodoId == null && serviceTodos.isNotEmpty) {
+      _selectedTodoId = serviceTodos.first.id;
+      if (serviceTodos.first.type == TodoType.service) {
+        _priceController.text = serviceTodos.first.basePrice?.toString() ?? '';
+      }
+    }
     final selectedTodo = serviceTodos.firstWhere(
       (todo) => todo.id == _selectedTodoId,
       orElse: () => serviceTodos.first,
@@ -60,27 +70,37 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 ),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<Todo>(
-            value: selectedTodo,
-            decoration: const InputDecoration(
-              labelText: 'Service / task',
-            ),
-            items: serviceTodos
-                .map(
-                  (todo) => DropdownMenuItem<Todo>(
-                    value: todo,
-                    child: Text(todo.title),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () => _showSearchableSelector(context, serviceTodos),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Service / Task',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+                        ),
+                        Text(
+                          selectedTodo.title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
                   ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _selectedTodoId = value.id;
-                _visibleMonth = DateTime(value.createdAt.year, value.createdAt.month);
-                _selectedDate = DateTime.now();
-              });
-            },
+                  const Icon(Icons.search_rounded),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           _MonthHeader(
@@ -104,6 +124,17 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             onDateSelected: (date) {
               setState(() {
                 _selectedDate = date;
+                final record = selectedTodo.attendanceRecords.firstWhere(
+                  (r) => r.date.year == date.year && r.date.month == date.month && r.date.day == date.day,
+                  orElse: () => TodoAttendanceRecord(
+                    id: '',
+                    date: date,
+                    status: AttendanceStatus.present,
+                    createdAt: DateTime.now(),
+                    price: selectedTodo.basePrice,
+                  ),
+                );
+                _priceController.text = record.price?.toString() ?? '';
               });
             },
           ),
@@ -117,6 +148,8 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             onPresent: () => _markAttendance(AttendanceStatus.present),
             onAbsent: () => _markAttendance(AttendanceStatus.absent),
             onAddActivity: () => _addActivity(),
+            priceController: _priceController,
+            currencySymbol: settings.currency.symbol,
           ),
           const SizedBox(height: 16),
           Text(
@@ -138,7 +171,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           ),
           const SizedBox(height: 8),
           ...selectedTodo.attendanceRecords.reversed.take(12).map(
-                (record) => _AttendanceTile(record: record),
+                (record) => _AttendanceTile(record: record, currencySymbol: settings.currency.symbol),
               ),
         ],
       ),
@@ -153,7 +186,16 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           todo.id,
           _selectedDate,
           status,
+          price: double.tryParse(_priceController.text),
         );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marked ${status.label} for ${DateFormat('MMM d').format(_selectedDate)}'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Future<void> _addActivity() async {
@@ -175,6 +217,29 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     return todos.firstWhere(
       (todo) => todo.id == selectedId,
       orElse: () => todos.first,
+    );
+  }
+
+  void _showSearchableSelector(BuildContext context, List<Todo> todos) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => _SearchableTodoSelector(
+        todos: todos,
+        onSelected: (todo) {
+          setState(() {
+            _selectedTodoId = todo.id;
+            _visibleMonth = DateTime(todo.createdAt.year, todo.createdAt.month);
+            _selectedDate = DateTime.now();
+            if (todo.type == TodoType.service) {
+              _priceController.text = todo.basePrice?.toString() ?? '';
+            } else {
+              _priceController.clear();
+            }
+          });
+        },
+      ),
     );
   }
 }
@@ -321,6 +386,58 @@ class _AttendanceCalendar extends StatelessWidget {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
+class _StatusChip extends StatelessWidget {
+  final bool completed;
+  final String label;
+  final bool compact;
+
+  const _StatusChip({
+    required this.completed,
+    required this.label,
+    required this.compact,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isNoRecord = label == 'No record';
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 10,
+        vertical: compact ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: isNoRecord
+            ? colorScheme.surfaceContainerHighest
+            : completed
+                ? Colors.green.withAlpha(40)
+                : Colors.red.withAlpha(40),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isNoRecord
+              ? colorScheme.outlineVariant
+              : completed
+                  ? Colors.green.withAlpha(120)
+                  : Colors.red.withAlpha(120),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: compact ? 10 : 11,
+          fontWeight: FontWeight.w700,
+          color: isNoRecord
+              ? colorScheme.onSurfaceVariant
+              : completed
+                  ? Colors.green.shade800
+                  : Colors.red.shade800,
+        ),
+      ),
+    );
+  }
+}
+
 class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -376,6 +493,8 @@ class _ActionCard extends StatelessWidget {
   final VoidCallback onPresent;
   final VoidCallback onAbsent;
   final VoidCallback onAddActivity;
+  final TextEditingController priceController;
+  final String currencySymbol;
 
   const _ActionCard({
     required this.selectedDate,
@@ -384,68 +503,121 @@ class _ActionCard extends StatelessWidget {
     required this.onPresent,
     required this.onAbsent,
     required this.onAddActivity,
+    required this.priceController,
+    required this.currencySymbol,
   });
 
   @override
   Widget build(BuildContext context) {
+    final record = selectedTodo.attendanceRecords.firstWhere(
+      (r) => r.date.year == selectedDate.year && r.date.month == selectedDate.month && r.date.day == selectedDate.day,
+      orElse: () => TodoAttendanceRecord(
+        id: '',
+        date: selectedDate,
+        status: AttendanceStatus.present,
+        createdAt: DateTime.now(),
+        price: selectedTodo.basePrice,
+      ),
+    );
+    final hasRecord = record.id.isNotEmpty;
+    final isPresent = hasRecord && record.status == AttendanceStatus.present;
+    final statusLabel = hasRecord ? record.status.label : 'No record';
+
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(120),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Actions for ${selectedTodo.title}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              DateFormat('EEE, MMM d').format(selectedDate),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: FilledButton.tonalIcon(
-                    onPressed: onPresent,
-                    icon: const Icon(Icons.check_circle_rounded),
-                    label: const Text('Present'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Details for ${selectedTodo.title}',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      Text(
+                        DateFormat('EEEE, MMM d').format(selectedDate),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                _StatusChip(
+                  completed: isPresent,
+                  label: statusLabel,
+                  compact: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (selectedTodo.type == TodoType.service) ...[
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Price / Salary / Amount',
+                  prefixIcon: const Icon(Icons.payments_rounded),
+                  prefixText: '$currencySymbol ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            TextField(
+              controller: activityController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Activity Note / Detail',
+                hintText: 'e.g. extra work, late arrival, paid full',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
                 Expanded(
-                  child: FilledButton.tonalIcon(
+                  child: OutlinedButton.icon(
                     onPressed: onAbsent,
                     icon: const Icon(Icons.cancel_rounded),
-                    label: const Text('Absent'),
+                    label: const Text('Mark Absent'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onPresent,
+                    icon: const Icon(Icons.check_circle_rounded),
+                    label: const Text('Mark Present'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      side: const BorderSide(color: Colors.green),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: activityController,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Activity note',
-                hintText: 'For example: cleaned kitchen, paid rent, inspected room',
-              ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
               child: FilledButton.icon(
-                onPressed: onAddActivity,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add activity'),
+                onPressed: () => onPresent(), // This effectively saves with the current "Present" status or updates record
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('Save / Update Day Data'),
               ),
             ),
           ],
@@ -499,8 +671,9 @@ class _ActivityTile extends StatelessWidget {
 
 class _AttendanceTile extends StatelessWidget {
   final TodoAttendanceRecord record;
+  final String currencySymbol;
 
-  const _AttendanceTile({required this.record});
+  const _AttendanceTile({required this.record, required this.currencySymbol});
 
   @override
   Widget build(BuildContext context) {
@@ -525,7 +698,7 @@ class _AttendanceTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${record.status.label} - ${DateFormat('EEE, MMM d').format(record.date)}',
+                  '${record.status.label} - ${DateFormat('EEE, MMM d').format(record.date)}${record.price != null ? " - $currencySymbol${record.price!.toStringAsFixed(2)}" : ""}',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 if (record.note.isNotEmpty) ...[
@@ -584,6 +757,72 @@ class _EmptyServiceState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchableTodoSelector extends StatefulWidget {
+  final List<Todo> todos;
+  final ValueChanged<Todo> onSelected;
+
+  const _SearchableTodoSelector({required this.todos, required this.onSelected});
+
+  @override
+  State<_SearchableTodoSelector> createState() => _SearchableTodoSelectorState();
+}
+
+class _SearchableTodoSelectorState extends State<_SearchableTodoSelector> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.todos.where((t) => t.title.toLowerCase().contains(_query.toLowerCase())).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text('Select Task/Service', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by title...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final todo = filtered[index];
+                return ListTile(
+                  title: Text(todo.title),
+                  subtitle: Text(todo.type.name),
+                  leading: CircleAvatar(
+                    child: Icon(todo.type == TodoType.service ? Icons.cleaning_services_rounded : Icons.task_alt_rounded),
+                  ),
+                  onTap: () {
+                    widget.onSelected(todo);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

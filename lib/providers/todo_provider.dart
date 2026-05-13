@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/todo_activity.dart';
 import '../models/todo_attendance.dart';
@@ -29,6 +30,8 @@ class TodoProvider extends ChangeNotifier {
   Future<Todo> addTodo(
     String title,
     String description, {
+    TodoType type = TodoType.task,
+    double? basePrice,
     List<TodoField> customFields = const [],
     DateTime? reminderAt,
   }) async {
@@ -37,6 +40,8 @@ class TodoProvider extends ChangeNotifier {
       title: title,
       description: description,
       createdAt: DateTime.now(),
+      type: type,
+      basePrice: basePrice,
       reminderAt: reminderAt,
       customFields: customFields,
       activities: [
@@ -132,6 +137,7 @@ class TodoProvider extends ChangeNotifier {
     DateTime date,
     AttendanceStatus status, {
     String note = '',
+    double? price,
   }) async {
     final index = _todos.indexWhere((t) => t.id == todoId);
     if (index == -1) return;
@@ -153,6 +159,7 @@ class TodoProvider extends ChangeNotifier {
       date: normalizedDate,
       status: status,
       note: note,
+      price: price ?? todo.basePrice,
       createdAt: DateTime.now(),
     );
 
@@ -170,7 +177,64 @@ class TodoProvider extends ChangeNotifier {
     await addActivity(
       todoId,
       status == AttendanceStatus.present ? 'Marked present' : 'Marked absent',
-      description: DateTime(date.year, date.month, date.day).toIso8601String().split('T').first,
+      description: '${DateTime(date.year, date.month, date.day).toIso8601String().split('T').first}${price != null || todo.basePrice != null ? " - Price: ${price ?? todo.basePrice}" : ""}',
     );
+  }
+
+  double getTotalEarnings(DateTime start, DateTime end) {
+    double total = 0;
+    for (final todo in _todos) {
+      for (final record in todo.attendanceRecords) {
+        if (record.status == AttendanceStatus.present &&
+            record.date.isAfter(start.subtract(const Duration(days: 1))) &&
+            record.date.isBefore(end.add(const Duration(days: 1)))) {
+          total += record.price ?? 0;
+        }
+      }
+    }
+    return total;
+  }
+
+  Map<DateTime, double> getDailyEarnings(DateTime start, DateTime end) {
+    final Map<DateTime, double> daily = {};
+    for (final todo in _todos) {
+      for (final record in todo.attendanceRecords) {
+        if (record.status == AttendanceStatus.present &&
+            record.date.isAfter(start.subtract(const Duration(days: 1))) &&
+            record.date.isBefore(end.add(const Duration(days: 1)))) {
+          final date = DateTime(record.date.year, record.date.month, record.date.day);
+          daily[date] = (daily[date] ?? 0) + (record.price ?? 0);
+        }
+      }
+    }
+    return daily;
+  }
+
+  Future<void> importData(String jsonData) async {
+    try {
+      final List<dynamic> decoded = json.decode(jsonData);
+      final importedTodos = decoded.map((item) => Todo.fromMap(item)).toList();
+      
+      // Merge or replace? For simplicity, we'll replace for now as a "restore" feature.
+      _todos = importedTodos;
+      await _repository.clearAll();
+      for (final todo in _todos) {
+        await _repository.saveTodo(todo);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error importing data: $e');
+      rethrow;
+    }
+  }
+
+  String exportData() {
+    return json.encode(_todos.map((t) => t.toMap()).toList());
+  }
+
+  Future<void> clearAllData() async {
+    _todos = [];
+    await _repository.clearAll();
+    notifyListeners();
   }
 }

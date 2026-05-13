@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
 
+enum Currency {
+  rupee('₹', 'Rupee'),
+  dollar('\$', 'Dollar'),
+  pound('£', 'Pound');
+
+  final String symbol;
+  final String label;
+  const Currency(this.symbol, this.label);
+}
+
 class ThemeProvider extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
   static const String _compactModeKey = 'compact_mode';
@@ -14,6 +24,7 @@ class ThemeProvider extends ChangeNotifier {
   static const String _allowVideoFieldsKey = 'allow_video_fields';
   static const String _allowNumberFieldsKey = 'allow_number_fields';
   static const String _importantRemindersKey = 'important_reminders';
+  static const String _currencyKey = 'currency';
 
   ThemeMode _themeMode = ThemeMode.light;
   bool _compactMode = false;
@@ -27,6 +38,7 @@ class ThemeProvider extends ChangeNotifier {
   bool _allowVideoFields = false;
   bool _allowNumberFields = true;
   bool _importantReminders = false;
+  Currency _currency = Currency.rupee;
 
   ThemeProvider() {
     _loadThemeMode();
@@ -44,6 +56,7 @@ class ThemeProvider extends ChangeNotifier {
   bool get allowVideoFields => _allowVideoFields;
   bool get allowNumberFields => _allowNumberFields;
   bool get importantReminders => _importantReminders;
+  Currency get currency => _currency;
 
   Future<void> _loadThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -58,6 +71,10 @@ class ThemeProvider extends ChangeNotifier {
     _allowVideoFields = prefs.getBool(_allowVideoFieldsKey) ?? false;
     _allowNumberFields = prefs.getBool(_allowNumberFieldsKey) ?? true;
     _importantReminders = prefs.getBool(_importantRemindersKey) ?? false;
+    _currency = Currency.values.firstWhere(
+      (e) => e.name == prefs.getString(_currencyKey),
+      orElse: () => Currency.rupee,
+    );
     await TodoNotificationService.instance.setImportantRemindersEnabled(_importantReminders);
     _isLoaded = true;
     notifyListeners();
@@ -158,6 +175,14 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_importantRemindersKey, value);
     await TodoNotificationService.instance.setImportantRemindersEnabled(value);
+  }
+
+  Future<void> setCurrency(Currency value) async {
+    _currency = value;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_currencyKey, value.name);
   }
 
   ThemeMode _themeModeFromString(String? storedMode) {
