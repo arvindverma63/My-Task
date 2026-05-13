@@ -8,7 +8,11 @@ import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await TodoNotificationService.instance.initialize();
+  try {
+    await TodoNotificationService.instance.initialize();
+  } catch (e) {
+    debugPrint('Notification initialization failed: $e');
+  }
   runApp(const MyApp());
 }
 

@@ -26,31 +26,41 @@ class TodoNotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    tz.initializeTimeZones();
-    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(_resolveLocation(timezoneInfo.identifier));
+    try {
+      debugPrint('Initializing Timezones...');
+      tz.initializeTimeZones();
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(_resolveLocation(timezoneInfo.identifier));
 
-    const androidSettings = AndroidInitializationSettings('ic_stat_notification');
-    const darwinSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      debugPrint('Setting up Android Notification Settings...');
+      const androidSettings = AndroidInitializationSettings('ic_stat_notification');
+      const darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: darwinSettings,
-      macOS: darwinSettings,
-    );
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+        macOS: darwinSettings,
+      );
 
-    await _plugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTap,
-    );
+      await _plugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTap,
+      );
 
-    await _requestPermissions();
-    await _configureAndroidChannels();
-    _initialized = true;
+      debugPrint('Requesting Notification Permissions...');
+      await _requestPermissions();
+      await _configureAndroidChannels();
+      _initialized = true;
+      debugPrint('Notification Service Initialized Successfully.');
+    } catch (e) {
+      debugPrint('Error during notification initialization: $e');
+      // Set initialized to true anyway to prevent repeated hangs/crashes
+      _initialized = true; 
+    }
   }
 
   Future<void> _requestPermissions() async {
