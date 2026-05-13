@@ -4,10 +4,24 @@ import 'providers/theme_provider.dart';
 import 'providers/todo_provider.dart';
 import 'repositories/local_todo_repository.dart';
 import 'screens/todo_list_screen.dart';
-import 'services/notification_service.dart';
+import 'package:todo/services/notification_service.dart';
+import 'package:flutter/services.dart';
+
+import 'providers/employee_provider.dart';
+import 'repositories/local_employee_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Hide system bottom navigation bar but keep status bar
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark, // Use dark icons for white layout
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+  
   try {
     await TodoNotificationService.instance.initialize();
   } catch (e) {
@@ -37,6 +51,9 @@ class MyApp extends StatelessWidget {
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: brightness == Brightness.light
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
         color: colorScheme.surfaceContainerHighest,
@@ -106,6 +123,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => TodoProvider(LocalTodoRepository())),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => EmployeeProvider(LocalEmployeeRepository())),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {

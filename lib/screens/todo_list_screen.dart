@@ -8,6 +8,7 @@ import 'service_report_screen.dart';
 import '../widgets/add_todo_dialog.dart';
 import '../widgets/todo_item.dart';
 import 'theme_settings_screen.dart';
+import 'employee_management_screen.dart';
 
 import '../widgets/tutorial_guide.dart';
 
@@ -73,7 +74,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 ),
                 TutorialStep(
                   title: 'Smart Navigation',
-                  message: 'Switch between your Task Board, Service Attendance, and Earnings Reports.',
+                  message: 'Switch between Tasks, Services, Employees, and Reports.',
                   alignment: Alignment.bottomCenter,
                   icon: Icons.navigation_rounded,
                 ),
@@ -99,32 +100,31 @@ class _TodoListScreenState extends State<TodoListScreen> {
             )
           : FloatingActionButton.extended(
               onPressed: () => _showAddTodoDialog(context),
-              label: const Text('Add task'),
+              label: const Text('New Task'),
               icon: const Icon(Icons.add_task_rounded),
-              elevation: 4,
             )) : null,
     );
   }
 
   Widget _buildBody(TodoProvider todoProvider, ThemeProvider settings, List<Todo> filteredTodos, int activeCount, int completedCount) {
-    return IndexedStack(
-      index: _currentIndex,
-      children: [
-        _buildTasksList(todoProvider, settings, filteredTodos, activeCount, completedCount),
-        const AttendanceCalendarScreen(),
-        const ServiceReportScreen(),
-      ],
-    );
+    switch (_currentIndex) {
+      case 0:
+        return _buildTasksList(todoProvider, settings, filteredTodos, activeCount, completedCount);
+      case 1:
+        return const AttendanceCalendarScreen();
+      case 2:
+        return const EmployeeManagementScreen();
+      case 3:
+        return const ServiceReportScreen();
+      default:
+        return const Center(child: Text('Coming Soon'));
+    }
   }
 
   Widget _buildBottomNav() {
     return NavigationBar(
       selectedIndex: _currentIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
+      onDestinationSelected: (index) => setState(() => _currentIndex = index),
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.task_alt_rounded),
@@ -132,7 +132,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
         ),
         NavigationDestination(
           icon: Icon(Icons.calendar_month_rounded),
-          label: 'Calendar',
+          label: 'Services',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.people_alt_rounded),
+          label: 'Employees',
         ),
         NavigationDestination(
           icon: Icon(Icons.bar_chart_rounded),
