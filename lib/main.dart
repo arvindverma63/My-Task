@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/todo_provider.dart';
-import 'repositories/local_todo_repository.dart';
-import 'screens/todo_list_screen.dart';
-import 'package:todo/services/notification_service.dart';
+import 'screens/main_dashboard_screen.dart';
 import 'package:flutter/services.dart';
 
 import 'providers/employee_provider.dart';
 import 'repositories/local_employee_repository.dart';
+import 'providers/appliance_provider.dart';
+import 'repositories/local_appliance_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +21,6 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
   
-  try {
-    await TodoNotificationService.instance.initialize();
-  } catch (e) {
-    debugPrint('Notification initialization failed: $e');
-  }
   runApp(const MyApp());
 }
 
@@ -41,6 +35,7 @@ class MyApp extends StatelessWidget {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Roboto',
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
@@ -121,19 +116,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => TodoProvider(LocalTodoRepository())),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => EmployeeProvider(LocalEmployeeRepository())),
+        ChangeNotifierProvider(create: (_) => ApplianceProvider(LocalApplianceRepository())),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           return MaterialApp(
-            title: 'Premium Todo',
+            title: 'My Task',
             debugShowCheckedModeBanner: false,
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: themeProvider.themeMode,
-            home: const TodoListScreen(),
+            home: const MainDashboardScreen(),
           );
         },
       ),

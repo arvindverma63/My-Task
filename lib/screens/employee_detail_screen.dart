@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/employee_provider.dart';
@@ -171,6 +172,12 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> with Single
             Text(
               widget.employee.contact,
               style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Joined: ${DateFormat('dd MMM yyyy').format(widget.employee.joiningDate)}'
+              '${widget.employee.relievingDate != null ? '  •  Relieved: ${DateFormat('dd MMM yyyy').format(widget.employee.relievingDate!)}' : ''}',
+              style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -460,6 +467,10 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                       const SizedBox(height: 12),
                       _buildDetailRow(Icons.timer_rounded, 'Late by', selectedEntry.lateTime ?? '--', Colors.orange),
                     ],
+                    if (selectedEntry.status == AttendanceStatus.early) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow(Icons.timer_rounded, 'Early by', selectedEntry.earlyTime ?? '--', Colors.blue),
+                    ],
                     if (selectedEntry.amountGiven > 0) ...[
                       const Divider(height: 24),
                       _buildDetailRow(Icons.payments_rounded, 'Money Given', '₹${selectedEntry.amountGiven}', Colors.amber),
@@ -476,14 +487,21 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
+                    height: 56,
                     child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
                       onPressed: () => _showAttendanceDetailsDialog(
                         context, 
                         selectedEntry?.status ?? AttendanceStatus.present, 
                         selectedEntry ?? AttendanceEntry(id: '', employeeId: widget.employee.id, date: _selectedDay, status: AttendanceStatus.present)
                       ),
-                      icon: const Icon(Icons.edit_calendar_rounded),
-                      label: Text(selectedEntry == null ? 'Mark Attendance' : 'Update Attendance'),
+                      icon: const Icon(Icons.edit_calendar_rounded, size: 24),
+                      label: Text(
+                        selectedEntry == null ? 'Mark Attendance' : 'Update Attendance',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -522,71 +540,118 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
 
   Widget _buildDetailRow(IconData icon, String label, String value, dynamic color) {
     final useColor = color is Color ? color : (color as ColorScheme).onSurface;
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: useColor.withAlpha(150)),
-        const SizedBox(width: 12),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 24, color: useColor.withAlpha(200)),
+          const SizedBox(width: 16),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
     );
   }
 
-  void _showAttendanceDetailsDialog(BuildContext context, AttendanceStatus status, AttendanceEntry existing) {
+  void _showAttendanceDetailsDialog(BuildContext context, AttendanceStatus initialStatus, AttendanceEntry existing) {
     final checkInController = TextEditingController(text: existing.checkInTime ?? '09:00');
     final checkOutController = TextEditingController(text: existing.checkOutTime ?? '18:00');
-    final lateEarlyController = TextEditingController(text: status == AttendanceStatus.late ? existing.lateTime : existing.earlyTime);
+    final lateEarlyController = TextEditingController(text: existing.lateTime ?? existing.earlyTime ?? '');
+
+    AttendanceStatus selectedStatus = initialStatus;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Details for ${status.name.toUpperCase()}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (status != AttendanceStatus.absent) ...[
-              TextField(
-                controller: checkInController,
-                decoration: const InputDecoration(labelText: 'In Time', prefixIcon: Icon(Icons.login_rounded)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            title: const Text('Mark Attendance', textAlign: TextAlign.center),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Select Status:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.center,
+                    children: AttendanceStatus.values.map((s) {
+                      final isSelected = selectedStatus == s;
+                      final color = _getStatusColor(s);
+                      return ChoiceChip(
+                        label: Text(
+                          s.name.toUpperCase(),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                        selected: isSelected,
+                        selectedColor: color,
+                        backgroundColor: color.withAlpha(20),
+                        showCheckmark: false,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              selectedStatus = s;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  if (selectedStatus != AttendanceStatus.absent) ...[
+                    TextField(
+                      controller: checkInController,
+                      decoration: const InputDecoration(labelText: 'In Time', prefixIcon: Icon(Icons.login_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: checkOutController,
+                      decoration: const InputDecoration(labelText: 'Out Time', prefixIcon: Icon(Icons.logout_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (selectedStatus == AttendanceStatus.late || selectedStatus == AttendanceStatus.early)
+                    TextField(
+                      controller: lateEarlyController,
+                      decoration: InputDecoration(
+                        labelText: selectedStatus == AttendanceStatus.late ? 'Late by (time/mins)' : 'Early by (time/mins)',
+                        prefixIcon: const Icon(Icons.timer_rounded),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: checkOutController,
-                decoration: const InputDecoration(labelText: 'Out Time', prefixIcon: Icon(Icons.logout_rounded)),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () {
+                  final entry = AttendanceEntry(
+                    id: existing.id.isEmpty ? DateTime.now().millisecondsSinceEpoch.toString() : existing.id,
+                    employeeId: widget.employee.id,
+                    date: _selectedDay,
+                    status: selectedStatus,
+                    checkInTime: selectedStatus != AttendanceStatus.absent ? checkInController.text : null,
+                    checkOutTime: selectedStatus != AttendanceStatus.absent ? checkOutController.text : null,
+                    lateTime: selectedStatus == AttendanceStatus.late ? lateEarlyController.text : null,
+                    earlyTime: selectedStatus == AttendanceStatus.early ? lateEarlyController.text : null,
+                    amountGiven: existing.amountGiven,
+                    paymentDescription: existing.paymentDescription,
+                  );
+                  context.read<EmployeeProvider>().markAttendance(entry);
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
               ),
-              const SizedBox(height: 12),
             ],
-            if (status == AttendanceStatus.late || status == AttendanceStatus.early)
-              TextField(
-                controller: lateEarlyController,
-                decoration: InputDecoration(
-                  labelText: status == AttendanceStatus.late ? 'Late by (time/mins)' : 'Early by (time/mins)',
-                  prefixIcon: const Icon(Icons.timer_rounded),
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final entry = AttendanceEntry(
-                id: existing.id.isEmpty ? DateTime.now().millisecondsSinceEpoch.toString() : existing.id,
-                employeeId: widget.employee.id,
-                date: _selectedDay,
-                status: status,
-                checkInTime: status != AttendanceStatus.absent ? checkInController.text : null,
-                checkOutTime: status != AttendanceStatus.absent ? checkOutController.text : null,
-                lateTime: status == AttendanceStatus.late ? lateEarlyController.text : null,
-                earlyTime: status == AttendanceStatus.early ? lateEarlyController.text : null,
-              );
-              context.read<EmployeeProvider>().markAttendance(entry);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -643,49 +708,71 @@ class _EmployeePaymentsTab extends StatelessWidget {
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Text('Payment History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text('Payment History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ),
             if (entries.isEmpty)
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
-                  child: Text('No payments recorded yet.', style: TextStyle(fontStyle: FontStyle.italic)),
+                  child: Text('No payments recorded yet.', style: TextStyle(fontStyle: FontStyle.italic, fontSize: 14)),
                 ),
               )
             else
               ...entries.map((entry) => Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 1,
+                shadowColor: Colors.black.withAlpha(15),
+                color: Theme.of(context).colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(100), width: 1.5),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(30),
-                    child: Icon(Icons.currency_rupee_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+                    radius: 24,
+                    backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(20),
+                    child: Icon(Icons.currency_rupee_rounded, color: Theme.of(context).colorScheme.primary, size: 24),
                   ),
                   title: Text(
                     '₹${entry.amountGiven.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Date: ${entry.date.day}/${entry.date.month}/${entry.date.year}'),
-                      if (entry.paymentDescription != null && entry.paymentDescription!.isNotEmpty)
+                      const SizedBox(height: 4),
+                      Text(
+                        'Date: ${entry.date.day}/${entry.date.month}/${entry.date.year}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      if (entry.paymentDescription != null && entry.paymentDescription!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
                         Text(
                           entry.paymentDescription!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontStyle: FontStyle.italic),
                         ),
+                      ],
                     ],
                   ),
                 ),
               )),
             Padding(
               padding: const EdgeInsets.all(24),
-              child: FilledButton.icon(
-                onPressed: () => _showAddPaymentDialog(context),
-                icon: const Icon(Icons.add_card_rounded),
-                label: const Text('Give Money / Advance'),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  onPressed: () => _showAddPaymentDialog(context),
+                  icon: const Icon(Icons.add_card_rounded, size: 24),
+                  label: const Text(
+                    'Give Money / Advance',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ),
           ],

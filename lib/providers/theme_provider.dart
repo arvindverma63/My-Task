@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/notification_service.dart';
 
 enum Currency {
   rupee('₹', 'Rupee'),
@@ -75,7 +74,6 @@ class ThemeProvider extends ChangeNotifier {
       (e) => e.name == prefs.getString(_currencyKey),
       orElse: () => Currency.rupee,
     );
-    await TodoNotificationService.instance.setImportantRemindersEnabled(_importantReminders);
     _isLoaded = true;
     notifyListeners();
   }
@@ -174,7 +172,6 @@ class ThemeProvider extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_importantRemindersKey, value);
-    await TodoNotificationService.instance.setImportantRemindersEnabled(value);
   }
 
   Future<void> setCurrency(Currency value) async {

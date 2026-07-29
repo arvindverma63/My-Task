@@ -6,7 +6,10 @@
     <application
         android:label="todo"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="true"
+        android:hasFragileUserData="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
