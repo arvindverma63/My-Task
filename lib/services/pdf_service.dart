@@ -27,11 +27,12 @@ class PdfService {
             pw.TableHelper.fromTextArray(
               headers: ['Name', 'Contact', 'Joining Date', 'Base Salary', 'Status'],
               data: employees.map((emp) {
+                final suffix = emp.salaryBasis == 'monthly' ? ' / mo' : ' / day';
                 return [
                   emp.name,
                   emp.contact,
                   DateFormat('dd/MM/yyyy').format(emp.joiningDate),
-                  'Rs. ${emp.baseSalary}',
+                  'Rs. ${emp.baseSalary}$suffix',
                   emp.relievingDate == null ? 'Active' : 'Relieved',
                 ];
               }).toList(),
@@ -54,7 +55,7 @@ class PdfService {
     await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
   }
 
-  static Future<void> generateAttendanceReport(DateTime date, List<Employee> employees, Map<String, AttendanceEntry?> dailyStatus) async {
+  static Future<void> generateAttendanceReport(DateTime date, List<Employee> employees, Map<String, List<AttendanceEntry>> dailyStatus) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -75,15 +76,20 @@ class PdfService {
             pw.SizedBox(height: 20),
             pw.TableHelper.fromTextArray(
               headers: ['Employee Name', 'Status', 'In Time', 'Out Time', 'Payment'],
-              data: employees.map((emp) {
-                final status = dailyStatus[emp.id];
-                return [
+              data: employees.expand((emp) {
+                final list = dailyStatus[emp.id] ?? [];
+                if (list.isEmpty) {
+                  return [
+                    [emp.name, 'N/A', '--:--', '--:--', '--']
+                  ];
+                }
+                return list.map((status) => [
                   emp.name,
-                  status?.status.name.toUpperCase() ?? 'N/A',
-                  status?.checkInTime ?? '--:--',
-                  status?.checkOutTime ?? '--:--',
-                  status?.amountGiven != null ? 'Rs. ${status!.amountGiven}' : '--',
-                ];
+                  status.status.name.toUpperCase(),
+                  status.checkInTime ?? '--:--',
+                  status.checkOutTime ?? '--:--',
+                  status.amountGiven > 0 ? 'Rs. ${status.amountGiven}' : '--',
+                ]);
               }).toList(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
               headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),

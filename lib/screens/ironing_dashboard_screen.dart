@@ -373,10 +373,16 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
   }
 
   Widget _buildWorkerSummaryHeader(IroningWorker worker, ColorScheme colorScheme) {
-    return FutureBuilder<List<IroningRecord>>(
-      future: context.read<EmployeeProvider>().getIroningRecords(worker.id),
+    final provider = context.read<EmployeeProvider>();
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        provider.getIroningRecords(worker.id),
+        provider.getIroningPayments(worker.id),
+      ]),
       builder: (context, snapshot) {
-        final records = snapshot.data ?? [];
+        final records = snapshot.hasData ? (snapshot.data![0] as List<IroningRecord>) : <IroningRecord>[];
+        final payments = snapshot.hasData ? (snapshot.data![1] as List<IroningPayment>) : <IroningPayment>[];
+
         double totalEarnings = 0;
         int totalClothes = 0;
         for (var rec in records) {
@@ -386,8 +392,15 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
           }
         }
 
+        double totalPaid = 0;
+        for (var pay in payments) {
+          totalPaid += pay.amount;
+        }
+
+        final balance = totalEarnings - totalPaid;
+
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [colorScheme.primary, Colors.deepPurple[600]!],
@@ -404,42 +417,79 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'TOTAL EARNINGS',
-                      style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                      'EARNED',
+                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '₹${totalEarnings.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '$totalClothes pcs',
+                      style: const TextStyle(color: Colors.white60, fontSize: 10),
                     ),
                   ],
                 ),
               ),
               Container(
-                height: 50,
-                width: 1.5,
+                height: 40,
+                width: 1,
                 color: Colors.white24,
               ),
-              const SizedBox(width: 20),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'CLOTHES IRONED',
-                      style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                      'PAID',
+                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$totalClothes pcs',
-                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                      '₹${totalPaid.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${payments.length} payments',
+                      style: const TextStyle(color: Colors.white60, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 40,
+                width: 1,
+                color: Colors.white24,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    const Text(
+                      'BALANCE',
+                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${balance.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: balance >= 0 ? const Color(0xFFA5D6A7) : const Color(0xFFEF9A9A),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      balance >= 0 ? 'Pending' : 'Overpaid',
+                      style: TextStyle(
+                        color: balance >= 0 ? const Color(0xFFA5D6A7).withAlpha(200) : const Color(0xFFEF9A9A).withAlpha(200),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -665,10 +715,10 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                         _buildDialogInputField(
                           context: context,
                           controller: contactController,
-                          label: 'Contact Phone',
+                          label: 'Contact Phone (Optional)',
                           prefixIcon: Icons.phone_rounded,
                           keyboardType: TextInputType.phone,
-                          validator: (v) => v == null || v.trim().length < 10 ? 'Enter valid contact phone' : null,
+                          validator: null, // Optional, can be any length or empty
                         ),
                       ],
                     ),

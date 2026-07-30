@@ -10,6 +10,7 @@ abstract class EmployeeRepository {
   Future<List<AttendanceEntry>> getAttendance(String employeeId);
   Future<void> saveAttendance(AttendanceEntry entry);
   Future<void> updateAttendance(AttendanceEntry entry);
+  Future<void> deleteAttendance(String employeeId, String entryId);
 
   Future<List<IroningWorker>> getIroningWorkers();
   Future<void> saveIroningWorker(IroningWorker worker);

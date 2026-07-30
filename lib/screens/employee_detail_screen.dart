@@ -186,6 +186,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> with Single
   }
 
   Widget _buildQuickActions(ColorScheme colorScheme) {
+    final hasContact = widget.employee.contact.trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Row(
@@ -194,12 +195,12 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> with Single
           _ActionButton(
             icon: Icons.call_rounded,
             label: 'Call',
-            onTap: _makeCall,
+            onTap: hasContact ? _makeCall : null,
           ),
           _ActionButton(
             icon: Icons.message_rounded,
             label: 'SMS',
-            onTap: _sendSMS,
+            onTap: hasContact ? _sendSMS : null,
           ),
           _ActionButton(
             icon: Icons.edit_rounded,
@@ -276,13 +277,14 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> with Single
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const _ActionButton({required this.icon, required this.label, required this.onTap});
+  const _ActionButton({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isEnabled = onTap != null;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -291,13 +293,20 @@ class _ActionButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withAlpha(100),
+              color: isEnabled ? colorScheme.primaryContainer.withAlpha(100) : Colors.grey.withAlpha(50),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: colorScheme.primary),
+            child: Icon(icon, color: isEnabled ? colorScheme.primary : Colors.grey),
           ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+          Text(
+            label, 
+            style: TextStyle(
+              fontSize: 12, 
+              fontWeight: FontWeight.w600, 
+              color: isEnabled ? colorScheme.primary : Colors.grey,
+            ),
+          ),
         ],
       ),
     );
@@ -347,12 +356,13 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
       builder: (context, snapshot) {
         final entries = snapshot.data ?? [];
         
-        final Map<DateTime, AttendanceEntry> entryMap = {
-          for (var e in entries) 
-            DateTime(e.date.year, e.date.month, e.date.day): e
-        };
+        final Map<DateTime, List<AttendanceEntry>> entryMap = {};
+        for (var e in entries) {
+          final dateKey = DateTime(e.date.year, e.date.month, e.date.day);
+          entryMap.putIfAbsent(dateKey, () => []).add(e);
+        }
 
-        final selectedEntry = entryMap[DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day)];
+        final selectedEntries = entryMap[DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day)] ?? [];
 
         return ListView(
           padding: EdgeInsets.zero,
@@ -373,27 +383,28 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                 setState(() => _calendarFormat = format);
               },
               eventLoader: (day) {
-                final entry = entryMap[DateTime(day.year, day.month, day.day)];
-                return entry != null ? [entry] : [];
+                return entryMap[DateTime(day.year, day.month, day.day)] ?? [];
               },
               calendarBuilders: CalendarBuilders(
                 markerBuilder: (context, day, events) {
                   if (events.isEmpty) return null;
-                  final entry = events.first as AttendanceEntry;
+                  final dayEvents = events.cast<AttendanceEntry>();
+                  final hasPayment = dayEvents.any((e) => e.amountGiven > 0);
                   return Positioned(
                     bottom: 4,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
+                        ...dayEvents.map((entry) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
                           width: 5,
                           height: 5,
                           decoration: BoxDecoration(
                             color: _getStatusColor(entry.status),
                             shape: BoxShape.circle,
                           ),
-                        ),
-                        if (entry.amountGiven > 0) ...[
+                        )),
+                        if (hasPayment) ...[
                           const SizedBox(width: 2),
                           const Icon(Icons.currency_rupee_rounded, size: 10, color: Colors.amber),
                         ],
@@ -402,21 +413,23 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                   );
                 },
                 defaultBuilder: (context, day, focusedDay) {
-                  final entry = entryMap[DateTime(day.year, day.month, day.day)];
-                  if (entry != null) {
+                  final dayEvents = entryMap[DateTime(day.year, day.month, day.day)] ?? [];
+                  if (dayEvents.isNotEmpty) {
+                    final firstStatus = dayEvents.first.status;
+                    final hasPayment = dayEvents.any((e) => e.amountGiven > 0);
                     return Container(
                       margin: const EdgeInsets.all(4),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _getStatusColor(entry.status).withAlpha(40),
+                        color: _getStatusColor(firstStatus).withAlpha(40),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _getStatusColor(entry.status).withAlpha(100)),
+                        border: Border.all(color: _getStatusColor(firstStatus).withAlpha(100)),
                       ),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Text('${day.day}', style: TextStyle(color: _getStatusColor(entry.status), fontWeight: FontWeight.bold)),
-                          if (entry.amountGiven > 0)
+                          Text('${day.day}', style: TextStyle(color: _getStatusColor(firstStatus), fontWeight: FontWeight.bold)),
+                          if (hasPayment)
                             const Positioned(
                               top: 0,
                               right: 0,
@@ -452,39 +465,79 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                         '${_selectedDay.day}/${_selectedDay.month}/${_selectedDay.year}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                      if (selectedEntry != null)
-                        _getStatusBadge(selectedEntry.status, colorScheme)
+                      if (selectedEntries.isNotEmpty)
+                        Text('${selectedEntries.length} entries', style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold))
                       else
                         const Text('No entry', style: TextStyle(fontStyle: FontStyle.italic)),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (selectedEntry != null) ...[
-                    _buildDetailRow(Icons.access_time_rounded, 'In Time', selectedEntry.checkInTime ?? '--:--', colorScheme),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(Icons.logout_rounded, 'Out Time', selectedEntry.checkOutTime ?? '--:--', colorScheme),
-                    if (selectedEntry.status == AttendanceStatus.late) ...[
-                      const SizedBox(height: 12),
-                      _buildDetailRow(Icons.timer_rounded, 'Late by', selectedEntry.lateTime ?? '--', Colors.orange),
-                    ],
-                    if (selectedEntry.status == AttendanceStatus.early) ...[
-                      const SizedBox(height: 12),
-                      _buildDetailRow(Icons.timer_rounded, 'Early by', selectedEntry.earlyTime ?? '--', Colors.blue),
-                    ],
-                    if (selectedEntry.amountGiven > 0) ...[
-                      const Divider(height: 24),
-                      _buildDetailRow(Icons.payments_rounded, 'Money Given', '₹${selectedEntry.amountGiven}', Colors.amber),
-                      if (selectedEntry.paymentDescription != null && selectedEntry.paymentDescription!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 32, top: 4),
-                          child: Text(
-                            selectedEntry.paymentDescription!,
-                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontStyle: FontStyle.italic),
+                  if (selectedEntries.isNotEmpty)
+                    ...selectedEntries.map((selectedEntry) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        color: colorScheme.surfaceContainerLow,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _getStatusBadge(selectedEntry.status, colorScheme),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_rounded, size: 18),
+                                        onPressed: () => _showAttendanceDetailsDialog(
+                                          context,
+                                          selectedEntry.status,
+                                          selectedEntry,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_rounded, size: 18, color: Colors.red),
+                                        onPressed: () => _confirmDeleteAttendance(context, selectedEntry),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(Icons.access_time_rounded, 'In Time', selectedEntry.checkInTime ?? '--:--', colorScheme),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(Icons.logout_rounded, 'Out Time', selectedEntry.checkOutTime ?? '--:--', colorScheme),
+                              if (selectedEntry.status == AttendanceStatus.late) ...[
+                                const SizedBox(height: 8),
+                                _buildDetailRow(Icons.timer_rounded, 'Late by', selectedEntry.lateTime ?? '--', Colors.orange),
+                              ],
+                              if (selectedEntry.status == AttendanceStatus.early) ...[
+                                const SizedBox(height: 8),
+                                _buildDetailRow(Icons.timer_rounded, 'Early by', selectedEntry.earlyTime ?? '--', Colors.blue),
+                              ],
+                              if (selectedEntry.amountGiven > 0) ...[
+                                const Divider(height: 16),
+                                _buildDetailRow(Icons.payments_rounded, 'Money Given', '₹${selectedEntry.amountGiven}', Colors.amber),
+                                if (selectedEntry.paymentDescription != null && selectedEntry.paymentDescription!.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 32, top: 4),
+                                    child: Text(
+                                      selectedEntry.paymentDescription!,
+                                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontStyle: FontStyle.italic),
+                                    ),
+                                  ),
+                              ],
+                            ],
                           ),
                         ),
-                    ],
-                  ],
-                  const SizedBox(height: 32),
+                      );
+                    }),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -494,13 +547,13 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                       ),
                       onPressed: () => _showAttendanceDetailsDialog(
                         context, 
-                        selectedEntry?.status ?? AttendanceStatus.present, 
-                        selectedEntry ?? AttendanceEntry(id: '', employeeId: widget.employee.id, date: _selectedDay, status: AttendanceStatus.present)
+                        AttendanceStatus.present, 
+                        AttendanceEntry(id: '', employeeId: widget.employee.id, date: _selectedDay, status: AttendanceStatus.present)
                       ),
-                      icon: const Icon(Icons.edit_calendar_rounded, size: 24),
-                      label: Text(
-                        selectedEntry == null ? 'Mark Attendance' : 'Update Attendance',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      icon: const Icon(Icons.add_moderator_rounded, size: 24),
+                      label: const Text(
+                        'Add Attendance Shift',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -510,6 +563,35 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
           ],
         );
       },
+    );
+  }
+
+  void _confirmDeleteAttendance(BuildContext context, AttendanceEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Entry'),
+        content: Text('Are you sure you want to delete this ${entry.status.name.toUpperCase()} attendance entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await context.read<EmployeeProvider>().deleteAttendance(widget.employee.id, entry.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Attendance entry deleted'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -666,15 +748,23 @@ class _EmployeePaymentsTab extends StatelessWidget {
     return FutureBuilder<List<AttendanceEntry>>(
       future: context.watch<EmployeeProvider>().getAttendance(employee.id),
       builder: (context, snapshot) {
-        final entries = snapshot.data?.where((e) => e.amountGiven > 0).toList() ?? [];
-        final totalGiven = entries.fold(0.0, (sum, e) => sum + e.amountGiven);
+        final allEntries = snapshot.data ?? [];
+        final entries = allEntries.where((e) => e.amountGiven > 0).toList();
+        final totalPaid = entries.fold(0.0, (sum, e) => sum + e.amountGiven);
+
+        final wageRate = employee.salaryBasis == 'monthly' 
+            ? (employee.baseSalary / 30.0) 
+            : employee.baseSalary;
+        final workingDays = allEntries.where((e) => e.status != AttendanceStatus.absent).length;
+        final totalEarned = workingDays * wageRate;
+        final balance = totalEarned - totalPaid;
 
         return ListView(
           padding: EdgeInsets.zero,
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -694,14 +784,86 @@ class _EmployeePaymentsTab extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text('Total Money Given (Advances)', style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
                   Text(
-                    '₹${totalGiven.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
+                    'Financial Summary (${employee.salaryBasis == 'monthly' ? 'Monthly basis' : 'Daily basis'})',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer.withAlpha(200),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Earned',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₹${totalEarned.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                            ),
+                            Text(
+                              '$workingDays days',
+                              style: const TextStyle(fontSize: 10, color: Colors.black54),
+                            ),
+                          ],
                         ),
+                      ),
+                      Container(width: 1, height: 40, color: Colors.black12),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Paid',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₹${totalPaid.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                            ),
+                            Text(
+                              '${entries.length} payments',
+                              style: const TextStyle(fontSize: 10, color: Colors.black54),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(width: 1, height: 40, color: Colors.black12),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Balance',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₹${balance.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 16, 
+                                fontWeight: FontWeight.bold, 
+                                color: balance >= 0 ? const Color(0xFF1B5E20) : const Color(0xFFB71C1C),
+                              ),
+                            ),
+                            Text(
+                              balance >= 0 ? 'Pending' : 'Overpaid',
+                              style: TextStyle(
+                                fontSize: 10, 
+                                color: balance >= 0 ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

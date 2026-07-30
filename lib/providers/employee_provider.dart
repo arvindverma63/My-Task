@@ -49,36 +49,21 @@ class EmployeeProvider extends ChangeNotifier {
 
   Future<void> markAttendance(AttendanceEntry entry) async {
     final existing = await _repository.getAttendance(entry.employeeId);
-    final index = existing.indexWhere((e) => 
-      e.date.year == entry.date.year && 
-      e.date.month == entry.date.month && 
-      e.date.day == entry.date.day
-    );
+    final index = existing.indexWhere((e) => e.id == entry.id);
 
     if (index != -1) {
-      final old = existing[index];
-      final updated = AttendanceEntry(
-        id: old.id,
-        employeeId: old.employeeId,
-        date: old.date,
-        status: entry.status, 
-        checkInTime: entry.checkInTime ?? old.checkInTime,
-        checkOutTime: entry.checkOutTime ?? old.checkOutTime,
-        lateTime: entry.lateTime ?? old.lateTime,
-        earlyTime: entry.earlyTime ?? old.earlyTime,
-        amountGiven: old.amountGiven + entry.amountGiven,
-        paymentDescription: (old.paymentDescription != null && old.paymentDescription!.isNotEmpty)
-            ? (entry.paymentDescription != null && entry.paymentDescription!.isNotEmpty)
-                ? '${old.paymentDescription}, ${entry.paymentDescription}'
-                : old.paymentDescription
-            : entry.paymentDescription,
-      );
-      await _repository.updateAttendance(updated);
+      await _repository.updateAttendance(entry);
     } else {
       await _repository.saveAttendance(entry);
     }
     
     _attendanceData.remove(entry.employeeId); // Force reload
+    notifyListeners();
+  }
+
+  Future<void> deleteAttendance(String employeeId, String entryId) async {
+    await _repository.deleteAttendance(employeeId, entryId);
+    _attendanceData.remove(employeeId); // Force reload
     notifyListeners();
   }
 

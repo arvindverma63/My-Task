@@ -156,14 +156,14 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
   Widget _buildSearchAndCalendar(ColorScheme colorScheme, List<Employee> employees) {
     return Column(
       children: [
-        FutureBuilder<Map<String, AttendanceStatus?>>(
+        FutureBuilder<Map<String, List<AttendanceStatus>>>(
           future: _getDailyStatuses(context, employees, _selectedDate),
           builder: (context, snapshot) {
             final statuses = snapshot.data ?? {};
             final total = employees.length;
-            final present = statuses.values.where((s) => s != null && s != AttendanceStatus.absent).length;
-            final absent = statuses.values.where((s) => s == AttendanceStatus.absent).length;
-            final unmarked = total - statuses.length;
+            final present = statuses.values.where((sList) => sList.any((s) => s != AttendanceStatus.absent)).length;
+            final absent = statuses.values.where((sList) => sList.isNotEmpty && sList.every((s) => s == AttendanceStatus.absent)).length;
+            final unmarked = total - statuses.values.where((sList) => sList.isNotEmpty).length;
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -315,15 +315,13 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
     );
   }
 
-  Future<Map<String, AttendanceStatus?>> _getDailyStatuses(BuildContext context, List<Employee> employees, DateTime date) async {
+  Future<Map<String, List<AttendanceStatus>>> _getDailyStatuses(BuildContext context, List<Employee> employees, DateTime date) async {
     final provider = context.read<EmployeeProvider>();
-    final Map<String, AttendanceStatus?> statuses = {};
+    final Map<String, List<AttendanceStatus>> statuses = {};
     for (var emp in employees) {
       final list = await provider.getAttendance(emp.id);
-      final today = list.where((e) => isSameDay(e.date, date)).firstOrNull;
-      if (today != null) {
-        statuses[emp.id] = today.status;
-      }
+      final today = list.where((e) => isSameDay(e.date, date)).map((e) => e.status).toList();
+      statuses[emp.id] = today;
     }
     return statuses;
   }
@@ -335,11 +333,11 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
 
   Future<void> _generateDailyReport(BuildContext context, List<Employee> employees) async {
     final provider = context.read<EmployeeProvider>();
-    final Map<String, AttendanceEntry?> dailyStatus = {};
+    final Map<String, List<AttendanceEntry>> dailyStatus = {};
     
     for (var emp in employees) {
       final attendance = await provider.getAttendance(emp.id);
-      dailyStatus[emp.id] = attendance.where((e) => isSameDay(e.date, _selectedDate)).firstOrNull;
+      dailyStatus[emp.id] = attendance.where((e) => isSameDay(e.date, _selectedDate)).toList();
     }
 
     await PdfService.generateAttendanceReport(_selectedDate, employees, dailyStatus);
@@ -367,7 +365,12 @@ class _CompactEmployeeCard extends StatelessWidget {
       future: context.watch<EmployeeProvider>().getAttendance(employee.id),
       builder: (context, snapshot) {
         final attendance = snapshot.data ?? [];
-        final statusEntry = attendance.where((e) => isSameDay(e.date, selectedDate)).firstOrNull;
+        final dayEntries = attendance.where((e) => isSameDay(e.date, selectedDate)).toList();
+
+        final firstStatus = dayEntries.firstOrNull?.status;
+        final sideColor = firstStatus == null 
+            ? colorScheme.outlineVariant.withAlpha(100) 
+            : _getStatusColor(firstStatus);
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -383,59 +386,85 @@ class _CompactEmployeeCard extends StatelessWidget {
               Container(
                 width: 6,
                 height: 80,
-                color: statusEntry == null ? colorScheme.outlineVariant.withAlpha(100) : _getStatusColor(statusEntry.status),
+                color: sideColor,
               ),
               Expanded(
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  onTap: () => _showQuickActionsBottomSheet(context, statusEntry),
-                  leading: Hero(
-                    tag: 'emp_avatar_${employee.id}',
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: (statusEntry == null ? colorScheme.outlineVariant.withAlpha(100) : _getStatusColor(statusEntry.status)).withAlpha(100),
-                          width: 2,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: colorScheme.primaryContainer,
-                        backgroundImage: employee.photoPath != null ? FileImage(File(employee.photoPath!)) : null,
-                        child: employee.photoPath == null
-                            ? Text(
-                                employee.name[0].toUpperCase(),
-                                style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onPrimaryContainer, fontSize: 18),
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    employee.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
+                child: InkWell(
+                  onTap: () => _showQuickActionsBottomSheet(context, dayEntries),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
-                        Icon(Icons.phone_rounded, size: 12, color: colorScheme.onSurfaceVariant.withAlpha(180)),
-                        const SizedBox(width: 4),
-                        Text(
-                          employee.contact,
-                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withAlpha(180)),
+                        Hero(
+                          tag: 'emp_avatar_${employee.id}',
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: sideColor.withAlpha(100),
+                                width: 2,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 24,
+                              backgroundColor: colorScheme.primaryContainer,
+                              backgroundImage: employee.photoPath != null ? FileImage(File(employee.photoPath!)) : null,
+                              child: employee.photoPath == null
+                                  ? Text(
+                                      employee.name[0].toUpperCase(),
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onPrimaryContainer, fontSize: 18),
+                                    )
+                                  : null,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                employee.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              employee.contact.trim().isNotEmpty
+                                  ? Row(
+                                      children: [
+                                        Icon(Icons.phone_rounded, size: 12, color: colorScheme.onSurfaceVariant.withAlpha(180)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          employee.contact,
+                                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withAlpha(180)),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      'No contact number',
+                                      style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: colorScheme.onSurfaceVariant.withAlpha(120)),
+                                    ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: dayEntries.isEmpty
+                              ? _buildStatusBadge(null, colorScheme)
+                              : Wrap(
+                                  spacing: 4,
+                                  runSpacing: 4,
+                                  alignment: WrapAlignment.end,
+                                  children: dayEntries.map((e) => _buildStatusBadge(e, colorScheme)).toList(),
+                                ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: colorScheme.onSurfaceVariant.withAlpha(120)),
                       ],
                     ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildStatusBadge(statusEntry, colorScheme),
-                      const SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 14, color: colorScheme.onSurfaceVariant.withAlpha(120)),
-                    ],
                   ),
                 ),
               ),
@@ -446,7 +475,7 @@ class _CompactEmployeeCard extends StatelessWidget {
     );
   }
 
-  void _showQuickActionsBottomSheet(BuildContext context, AttendanceEntry? statusEntry) {
+  void _showQuickActionsBottomSheet(BuildContext context, List<AttendanceEntry> dayEntries) {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
@@ -513,12 +542,98 @@ class _CompactEmployeeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const Divider(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
-                  'Actions for ${DateFormat('EEEE, d MMMM yyyy').format(selectedDate)}',
+                  'Attendance Shifts for ${DateFormat('EEEE, d MMMM yyyy').format(selectedDate)}',
                   style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary, fontSize: 14),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                
+                // Existing Shifts List
+                if (dayEntries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Text(
+                      'No attendance entries marked for today.',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant.withAlpha(160), fontStyle: FontStyle.italic, fontSize: 13),
+                    ),
+                  )
+                else
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: dayEntries.length,
+                      itemBuilder: (context, idx) {
+                        final entry = dayEntries[idx];
+                        final color = _getStatusColor(entry.status);
+                        final checkIn = entry.checkInTime ?? '--:--';
+                        final checkOut = entry.checkOutTime ?? '--:--';
+                        
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          color: colorScheme.surfaceContainerLow,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
+                          ),
+                          child: ListTile(
+                            dense: true,
+                            leading: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: color.withAlpha(30),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: color.withAlpha(80)),
+                              ),
+                              child: Text(
+                                entry.status.name.toUpperCase(),
+                                style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            title: Text(
+                              'Time: $checkIn - $checkOut',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                            subtitle: entry.amountGiven > 0 
+                                ? Text(
+                                    'Payment: ₹${entry.amountGiven} (${entry.paymentDescription ?? "Advance"})',
+                                    style: TextStyle(color: Colors.amber[800], fontSize: 10, fontWeight: FontWeight.w600),
+                                  )
+                                : (entry.lateTime != null ? Text('Late: ${entry.lateTime}', style: const TextStyle(fontSize: 10)) : 
+                                   entry.earlyTime != null ? Text('Early: ${entry.earlyTime}', style: const TextStyle(fontSize: 10)) : null),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded, size: 16),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showEditAttendanceDialog(context, entry);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_rounded, size: 16, color: Colors.red),
+                                  onPressed: () {
+                                    _confirmDeleteAttendance(context, entry);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                Text(
+                  'Mark New Attendance/Shift',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -535,7 +650,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       color: Colors.green,
                       onTap: () {
                         Navigator.pop(context);
-                        _markAttendanceStatus(context, AttendanceStatus.present, statusEntry);
+                        _markAttendanceStatus(context, AttendanceStatus.present, null);
                       },
                     ),
                     _buildQuickActionButton(
@@ -546,7 +661,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       color: Colors.red,
                       onTap: () {
                         Navigator.pop(context);
-                        _markAttendanceStatus(context, AttendanceStatus.absent, statusEntry);
+                        _markAttendanceStatus(context, AttendanceStatus.absent, null);
                       },
                     ),
                     _buildQuickActionButton(
@@ -557,7 +672,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       color: Colors.orange,
                       onTap: () {
                         Navigator.pop(context);
-                        _showTimeOffsetDialog(context, AttendanceStatus.late, statusEntry);
+                        _showTimeOffsetDialog(context, AttendanceStatus.late, null);
                       },
                     ),
                     _buildQuickActionButton(
@@ -568,7 +683,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       color: Colors.blue,
                       onTap: () {
                         Navigator.pop(context);
-                        _showTimeOffsetDialog(context, AttendanceStatus.early, statusEntry);
+                        _showTimeOffsetDialog(context, AttendanceStatus.early, null);
                       },
                     ),
                   ],
@@ -1104,6 +1219,158 @@ class _CompactEmployeeCard extends StatelessWidget {
       case AttendanceStatus.early: return Colors.blue;
     }
   }
+
+  void _confirmDeleteAttendance(BuildContext context, AttendanceEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Entry'),
+        content: Text('Are you sure you want to delete this ${entry.status.name.toUpperCase()} attendance entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await context.read<EmployeeProvider>().deleteAttendance(employee.id, entry.id);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close bottom sheet
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Attendance entry deleted'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditAttendanceDialog(BuildContext context, AttendanceEntry existing) {
+    final checkInController = TextEditingController(text: existing.checkInTime ?? '09:00');
+    final checkOutController = TextEditingController(text: existing.checkOutTime ?? '18:00');
+    final lateEarlyController = TextEditingController(text: existing.lateTime ?? existing.earlyTime ?? '');
+    final amountController = TextEditingController(text: existing.amountGiven > 0 ? existing.amountGiven.toString() : '');
+    final descController = TextEditingController(text: existing.paymentDescription ?? '');
+
+    AttendanceStatus selectedStatus = existing.status;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            title: const Text('Edit Attendance Entry', textAlign: TextAlign.center),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Status:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.center,
+                    children: AttendanceStatus.values.map((s) {
+                      final isSelected = selectedStatus == s;
+                      final color = _getStatusColor(s);
+                      return ChoiceChip(
+                        label: Text(
+                          s.name.toUpperCase(),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                        selected: isSelected,
+                        selectedColor: color,
+                        backgroundColor: color.withAlpha(20),
+                        showCheckmark: false,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              selectedStatus = s;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  if (selectedStatus != AttendanceStatus.absent) ...[
+                    TextField(
+                      controller: checkInController,
+                      decoration: const InputDecoration(labelText: 'In Time', prefixIcon: Icon(Icons.login_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: checkOutController,
+                      decoration: const InputDecoration(labelText: 'Out Time', prefixIcon: Icon(Icons.logout_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (selectedStatus == AttendanceStatus.late || selectedStatus == AttendanceStatus.early) ...[
+                    TextField(
+                      controller: lateEarlyController,
+                      decoration: InputDecoration(
+                        labelText: selectedStatus == AttendanceStatus.late ? 'Late by (time/mins)' : 'Early by (time/mins)',
+                        prefixIcon: const Icon(Icons.timer_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(labelText: 'Payment / Advance (₹)', prefixIcon: Icon(Icons.currency_rupee_rounded)),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    decoration: const InputDecoration(labelText: 'Description', prefixIcon: Icon(Icons.description_rounded)),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text) ?? 0.0;
+                  final entry = AttendanceEntry(
+                    id: existing.id,
+                    employeeId: employee.id,
+                    date: selectedDate,
+                    status: selectedStatus,
+                    checkInTime: selectedStatus != AttendanceStatus.absent ? checkInController.text.trim() : null,
+                    checkOutTime: selectedStatus != AttendanceStatus.absent ? checkOutController.text.trim() : null,
+                    lateTime: selectedStatus == AttendanceStatus.late ? lateEarlyController.text.trim() : null,
+                    earlyTime: selectedStatus == AttendanceStatus.early ? lateEarlyController.text.trim() : null,
+                    amountGiven: amount,
+                    paymentDescription: descController.text.trim(),
+                  );
+                  await context.read<EmployeeProvider>().markAttendance(entry);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Attendance entry updated'), backgroundColor: Colors.green),
+                    );
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class EmployeeFormDialog extends StatefulWidget {
@@ -1122,6 +1389,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
   late DateTime _joiningDate;
   String? _photoPath;
   DateTime? _relievingDate;
+  late String _salaryBasis;
 
   @override
   void initState() {
@@ -1132,6 +1400,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
     _joiningDate = widget.employee?.joiningDate ?? DateTime.now();
     _photoPath = widget.employee?.photoPath;
     _relievingDate = widget.employee?.relievingDate;
+    _salaryBasis = widget.employee?.salaryBasis ?? 'daily';
   }
 
   @override
@@ -1277,16 +1546,40 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                       _buildFormInputField(
                         context: context,
                         controller: _contactController,
-                        label: 'Contact Phone',
+                        label: 'Contact Phone (Optional)',
                         prefixIcon: Icons.phone_rounded,
                         keyboardType: TextInputType.phone,
-                        validator: (value) => value == null || value.length < 10 ? 'Invalid contact' : null,
+                        validator: null, // Optional, can be any length or empty
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(Icons.tune_rounded, size: 20),
+                          const SizedBox(width: 12),
+                          const Text('Salary Basis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          const Spacer(),
+                          ChoiceChip(
+                            label: const Text('DAILY'),
+                            selected: _salaryBasis == 'daily',
+                            onSelected: (selected) {
+                              if (selected) setState(() => _salaryBasis = 'daily');
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text('30 DAYS'),
+                            selected: _salaryBasis == 'monthly',
+                            onSelected: (selected) {
+                              if (selected) setState(() => _salaryBasis = 'monthly');
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       _buildFormInputField(
                         context: context,
                         controller: _salaryController,
-                        label: 'Daily Salary',
+                        label: _salaryBasis == 'daily' ? 'Daily Salary / Wage' : 'Monthly Salary (30 Days)',
                         prefixIcon: Icons.payments_rounded,
                         prefixText: '₹ ',
                         keyboardType: TextInputType.number,
@@ -1373,6 +1666,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                             contact: _contactController.text.trim(),
                             joiningDate: _joiningDate,
                             baseSalary: double.parse(_salaryController.text),
+                            salaryBasis: _salaryBasis,
                             photoPath: _photoPath,
                             relievingDate: _relievingDate,
                           );

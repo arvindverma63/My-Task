@@ -9,6 +9,7 @@ class Employee {
   final DateTime joiningDate;
   final DateTime? relievingDate;
   final double baseSalary; // Monthly or Daily base for calculation
+  final String salaryBasis; // 'daily' or 'monthly'
 
   Employee({
     required this.id,
@@ -18,6 +19,7 @@ class Employee {
     required this.joiningDate,
     this.relievingDate,
     required this.baseSalary,
+    this.salaryBasis = 'daily',
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +31,7 @@ class Employee {
       'joiningDate': joiningDate.toIso8601String(),
       'relievingDate': relievingDate?.toIso8601String(),
       'baseSalary': baseSalary,
+      'salaryBasis': salaryBasis,
     };
   }
 
@@ -41,6 +44,7 @@ class Employee {
       joiningDate: DateTime.parse(map['joiningDate']),
       relievingDate: map['relievingDate'] != null ? DateTime.parse(map['relievingDate']) : null,
       baseSalary: (map['baseSalary'] as num).toDouble(),
+      salaryBasis: map['salaryBasis'] ?? 'daily',
     );
   }
 }

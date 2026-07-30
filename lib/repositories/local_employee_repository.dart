@@ -73,6 +73,13 @@ class LocalEmployeeRepository implements EmployeeRepository {
   }
 
   @override
+  Future<void> deleteAttendance(String employeeId, String entryId) async {
+    final list = await getAttendance(employeeId);
+    list.removeWhere((e) => e.id == entryId);
+    await _saveAttendance(employeeId, list);
+  }
+
+  @override
   Future<List<IroningWorker>> getIroningWorkers() async {
     final prefs = await SharedPreferences.getInstance();
     final String? jsonStr = prefs.getString(_workersKey);

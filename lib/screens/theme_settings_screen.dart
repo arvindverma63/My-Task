@@ -11,7 +11,8 @@ import '../providers/appliance_provider.dart';
 
 class ThemeSettingsScreen extends StatelessWidget {
   final VoidCallback? onStartTour;
-  const ThemeSettingsScreen({super.key, this.onStartTour});
+  final VoidCallback? onRenewApp;
+  const ThemeSettingsScreen({super.key, this.onStartTour, this.onRenewApp});
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +129,14 @@ class ThemeSettingsScreen extends StatelessWidget {
                       subtitle: const Text('Permanently erase everything'),
                       leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
                       onTap: () => _showClearDataVerification(context),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
+                      title: const Text('Renew App (Fresh Start)', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Reset app state & seed fresh demo data'),
+                      leading: const Icon(Icons.refresh_rounded, color: Colors.blue),
+                      onTap: onRenewApp,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     const Divider(height: 1, indent: 56),
