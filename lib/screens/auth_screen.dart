@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../utils/session_manager.dart';
 import 'main_dashboard_screen.dart';
@@ -184,6 +185,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         clientId: kIsWeb
             ? '1000343378364-8q2jn8a47ek2mtf711kctclj84rc1005.apps.googleusercontent.com'
             : null,
+        serverClientId: '1000343378364-8q2jn8a47ek2mtf711kctclj84rc1005.apps.googleusercontent.com',
         scopes: ['email'],
       );
       final account = await googleSignIn.signIn();
@@ -222,10 +224,169 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _showErrorSnackBar(data['error'] ?? 'Google Sign-In verification failed.');
       }
     } catch (e) {
-      _showErrorSnackBar('Google Sign-In error: $e');
+      debugPrint('Google Sign-In Error: $e');
+      if (mounted) {
+        final errStr = e.toString();
+        if (errStr.contains('10') || errStr.contains('12500') || errStr.contains('sign_in_failed') || errStr.contains('ApiException')) {
+          _showGoogleSignInHelpDialog(errStr);
+        } else {
+          _showErrorSnackBar('Google Sign-In error: $e');
+        }
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showGoogleSignInHelpDialog(String errorDetail) {
+    const String sha1Fingerprint = 'B7:A0:04:32:84:10:E0:96:A3:3F:89:25:58:B7:8B:C9:46:B7:AC:F9';
+    const String packageName = 'com.todo.todo';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _crimsonSubtle,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.security_rounded, color: _crimsonPrimary, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Google Sign-In Setup',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: _slateText,
+                  fontFamily: 'Roboto',
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'On Android, Google Play Services requires registering your app’s SHA-1 fingerprint in the Google Cloud / Firebase Console under your OAuth Client.',
+                style: TextStyle(fontSize: 13, color: _slateMuted, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              
+              // Package Name Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _slateBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _slateBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'PACKAGE NAME',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _slateMuted, letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            packageName,
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: _slateText, fontFamily: 'monospace'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 18, color: _crimsonPrimary),
+                          onPressed: () {
+                            Clipboard.setData(const ClipboardData(text: packageName));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Package name copied!'), duration: Duration(seconds: 2)),
+                            );
+                          },
+                          tooltip: 'Copy Package Name',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // SHA-1 Fingerprint Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _slateBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _slateBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'DEBUG SHA-1 CERTIFICATE FINGERPRINT',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _slateMuted, letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            sha1Fingerprint,
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: _slateText, fontFamily: 'monospace'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 18, color: _crimsonPrimary),
+                          onPressed: () {
+                            Clipboard.setData(const ClipboardData(text: sha1Fingerprint));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('SHA-1 fingerprint copied!'), duration: Duration(seconds: 2)),
+                            );
+                          },
+                          tooltip: 'Copy SHA-1',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              const Text(
+                'Tip: You can also Sign Up / Sign In directly with a Username & Password or use Guest Mode without any setup.',
+                style: TextStyle(fontSize: 12, color: _crimsonDark, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700, color: _crimsonPrimary)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showErrorSnackBar(String message) {
