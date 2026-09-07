@@ -271,143 +271,78 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 
   Future<void> _seedSampleData() async {
-    final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
-    final applianceProvider = Provider.of<ApplianceProvider>(context, listen: false);
+    try {
+      final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+      final applianceProvider = Provider.of<ApplianceProvider>(context, listen: false);
+      final userId = await SessionManager().getUserId() ?? 'user';
+      final pfx = '${userId}_${DateTime.now().millisecondsSinceEpoch}';
 
-    // 1. Seed Employees
-    final emp1 = Employee(
-      id: 'demo_emp_1',
-      name: 'Ramesh Kumar',
-      contact: '9876543210',
-      joiningDate: DateTime.now().subtract(const Duration(days: 45)),
-      baseSalary: 450,
-      salaryBasis: 'daily',
-    );
-    final emp2 = Employee(
-      id: 'demo_emp_2',
-      name: 'Sunita Sharma',
-      contact: '9123456789',
-      joiningDate: DateTime.now().subtract(const Duration(days: 60)),
-      baseSalary: 15000,
-      salaryBasis: 'monthly',
-    );
-    await employeeProvider.addEmployee(emp1);
-    await employeeProvider.addEmployee(emp2);
-
-    // Seed attendance & payment for Ramesh (daily basis)
-    final now = DateTime.now();
-    for (int i = 1; i <= 10; i++) {
-      final date = now.subtract(Duration(days: i));
-      final status = i % 5 == 0 ? AttendanceStatus.absent : (i % 6 == 0 ? AttendanceStatus.late : AttendanceStatus.present);
-      final attendance = AttendanceEntry(
-        id: 'demo_att_1_$i',
-        employeeId: emp1.id,
-        date: date,
-        status: status,
-        checkInTime: status != AttendanceStatus.absent ? '09:00 AM' : null,
-        checkOutTime: status != AttendanceStatus.absent ? '06:00 PM' : null,
-        amountGiven: i == 3 ? 500 : 0,
-        paymentDescription: i == 3 ? 'Advance for festival' : '',
+      // 1. Seed Employees
+      final emp1 = Employee(
+        id: '${pfx}_emp_1',
+        name: 'Ramesh Kumar',
+        contact: '9876543210',
+        joiningDate: DateTime.now().subtract(const Duration(days: 45)),
+        baseSalary: 450,
+        salaryBasis: 'daily',
       );
-      await employeeProvider.markAttendance(attendance);
-    }
-
-    // Seed attendance & payment for Sunita (monthly basis)
-    for (int i = 1; i <= 15; i++) {
-      final date = now.subtract(Duration(days: i));
-      final status = i % 8 == 0 ? AttendanceStatus.absent : AttendanceStatus.present;
-      final attendance = AttendanceEntry(
-        id: 'demo_att_2_$i',
-        employeeId: emp2.id,
-        date: date,
-        status: status,
-        checkInTime: status != AttendanceStatus.absent ? '10:00 AM' : null,
-        checkOutTime: status != AttendanceStatus.absent ? '07:00 PM' : null,
-        amountGiven: i == 5 ? 2000 : 0,
-        paymentDescription: i == 5 ? 'Salary Advance' : '',
+      final emp2 = Employee(
+        id: '${pfx}_emp_2',
+        name: 'Sunita Sharma',
+        contact: '9123456789',
+        joiningDate: DateTime.now().subtract(const Duration(days: 60)),
+        baseSalary: 15000,
+        salaryBasis: 'monthly',
       );
-      await employeeProvider.markAttendance(attendance);
+      await employeeProvider.addEmployee(emp1);
+      await employeeProvider.addEmployee(emp2);
+
+      // Seed attendance & payment for Ramesh (daily basis)
+      final now = DateTime.now();
+      for (int i = 1; i <= 5; i++) {
+        final date = now.subtract(Duration(days: i));
+        final status = i % 5 == 0 ? AttendanceStatus.absent : (i % 6 == 0 ? AttendanceStatus.late : AttendanceStatus.present);
+        final attendance = AttendanceEntry(
+          id: '${pfx}_att_1_$i',
+          employeeId: emp1.id,
+          date: date,
+          status: status,
+          checkInTime: status != AttendanceStatus.absent ? '09:00 AM' : null,
+          checkOutTime: status != AttendanceStatus.absent ? '06:00 PM' : null,
+          amountGiven: i == 3 ? 500 : 0,
+          paymentDescription: i == 3 ? 'Advance for festival' : '',
+        );
+        await employeeProvider.markAttendance(attendance);
+      }
+
+      // 2. Seed Ironing Workers
+      final worker1 = IroningWorker(
+        id: '${pfx}_worker_1',
+        name: 'Karan Singh',
+        contact: '9988776655',
+        joiningDate: DateTime.now().subtract(const Duration(days: 30)),
+      );
+      await employeeProvider.addIroningWorker(worker1);
+
+      // Seed specific rates for Karan Singh
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_shirt_rate', clothingType: 'Shirt', rate: 6.0, date: DateTime.now()));
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_pant_rate', clothingType: 'Pant', rate: 7.0, date: DateTime.now()));
+
+      // 3. Seed Appliances
+      final appliance1 = Appliance(
+        id: '${pfx}_app_1',
+        name: 'Daikin AC 1.5 Ton',
+        type: 'Air Conditioner',
+        brand: 'Daikin',
+        serialNumber: 'DK894028392',
+        warrantyStart: DateTime.now().subtract(const Duration(days: 365)),
+        warrantyEnd: DateTime.now().add(const Duration(days: 365)),
+        createdAt: DateTime.now(),
+      );
+      await applianceProvider.addAppliance(appliance1);
+    } catch (e) {
+      debugPrint('Sample data seeding error (non-fatal): $e');
     }
-
-    // 2. Seed Ironing Workers
-    final worker1 = IroningWorker(
-      id: 'demo_worker_1',
-      name: 'Karan Singh',
-      contact: '9988776655',
-      joiningDate: DateTime.now().subtract(const Duration(days: 30)),
-    );
-    await employeeProvider.addIroningWorker(worker1);
-
-    // Seed specific rates for Karan Singh
-    await employeeProvider.saveIronRate(worker1.id, IronRate(id: 'shirt_rate', clothingType: 'Shirt', rate: 6.0, date: DateTime.now()));
-    await employeeProvider.saveIronRate(worker1.id, IronRate(id: 'pant_rate', clothingType: 'Pant', rate: 7.0, date: DateTime.now()));
-    await employeeProvider.saveIronRate(worker1.id, IronRate(id: 'saree_rate', clothingType: 'Saree', rate: 12.0, date: DateTime.now()));
-
-    // Seed ironing records
-    final record1 = IroningRecord(
-      id: 'demo_rec_1',
-      workerId: worker1.id,
-      date: now.subtract(const Duration(days: 3)),
-      clothesCount: {'Shirt': 15, 'Pant': 10, 'Saree': 2},
-      totalWage: (15 * 6.0) + (10 * 7.0) + (2 * 12.0),
-      createdAt: DateTime.now(),
-    );
-    final record2 = IroningRecord(
-      id: 'demo_rec_2',
-      workerId: worker1.id,
-      date: now.subtract(const Duration(days: 1)),
-      clothesCount: {'Shirt': 20, 'Pant': 15},
-      totalWage: (20 * 6.0) + (15 * 7.0),
-      createdAt: DateTime.now(),
-    );
-    await employeeProvider.saveIroningRecord(worker1.id, record1);
-    await employeeProvider.saveIroningRecord(worker1.id, record2);
-
-    // Seed ironing payments
-    final pay1 = IroningPayment(
-      id: 'demo_pay_1',
-      workerId: worker1.id,
-      date: now.subtract(const Duration(days: 2)),
-      amount: 150.0,
-      description: 'Part payment',
-      createdAt: DateTime.now(),
-    );
-    await employeeProvider.saveIroningPayment(worker1.id, pay1);
-
-    // 3. Seed Appliances
-    final appliance1 = Appliance(
-      id: 'demo_app_1',
-      name: 'Daikin AC 1.5 Ton',
-      type: 'Air Conditioner',
-      brand: 'Daikin',
-      serialNumber: 'DK894028392',
-      warrantyStart: DateTime.now().subtract(const Duration(days: 365)),
-      warrantyEnd: DateTime.now().add(const Duration(days: 365)),
-      createdAt: DateTime.now(),
-    );
-    final appliance2 = Appliance(
-      id: 'demo_app_2',
-      name: 'Samsung Fridge',
-      type: 'Refrigerator',
-      brand: 'Samsung',
-      serialNumber: 'REF-SAM-29381',
-      warrantyStart: DateTime.now().subtract(const Duration(days: 730)),
-      warrantyEnd: DateTime.now().subtract(const Duration(days: 1)),
-      createdAt: DateTime.now(),
-    );
-    await applianceProvider.addAppliance(appliance1);
-    await applianceProvider.addAppliance(appliance2);
-
-    // Seed service record
-    final service = ServiceRecord(
-      id: 'demo_srv_1',
-      applianceId: appliance1.id,
-      serviceDate: DateTime.now().subtract(const Duration(days: 90)),
-      price: 1500.0,
-      remarks: 'Gas refilling and cleaning',
-      createdAt: DateTime.now(),
-    );
-    await applianceProvider.addServiceRecord(service);
   }
 
   void _showTourGuideDialog() {
