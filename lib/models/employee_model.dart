@@ -43,7 +43,7 @@ class Employee {
       photoPath: map['photoPath'],
       joiningDate: DateTime.parse(map['joiningDate']),
       relievingDate: map['relievingDate'] != null ? DateTime.parse(map['relievingDate']) : null,
-      baseSalary: (map['baseSalary'] as num).toDouble(),
+      baseSalary: map['baseSalary'] != null ? (double.tryParse(map['baseSalary'].toString()) ?? 0.0) : 0.0,
       salaryBasis: map['salaryBasis'] ?? 'daily',
     );
   }
@@ -99,7 +99,7 @@ class AttendanceEntry {
       checkOutTime: map['checkOutTime'],
       lateTime: map['lateTime'],
       earlyTime: map['earlyTime'],
-      amountGiven: (map['amountGiven'] as num).toDouble(),
+      amountGiven: map['amountGiven'] != null ? (double.tryParse(map['amountGiven'].toString()) ?? 0.0) : 0.0,
       paymentDescription: map['paymentDescription'],
     );
   }

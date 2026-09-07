@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
+import 'screens/auth_screen.dart';
 import 'screens/main_dashboard_screen.dart';
+import 'utils/session_manager.dart';
 import 'package:flutter/services.dart';
 
 import 'providers/employee_provider.dart';
-import 'repositories/local_employee_repository.dart';
+import 'repositories/api_employee_repository.dart';
 import 'providers/appliance_provider.dart';
-import 'repositories/local_appliance_repository.dart';
+import 'repositories/api_appliance_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Hide system bottom navigation bar but keep status bar
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark, // Use dark icons for white layout
+    statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
@@ -38,8 +39,10 @@ class MyApp extends StatelessWidget {
       fontFamily: 'Roboto',
       brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
-      visualDensity: VisualDensity.standard,
+      scaffoldBackgroundColor: brightness == Brightness.light
+          ? const Color(0xFFF8FAFC)
+          : const Color(0xFF0F172A),
+      visualDensity: VisualDensity.compact,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -51,46 +54,70 @@ class MyApp extends StatelessWidget {
             : SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
-        color: colorScheme.surfaceContainerHighest,
+        color: brightness == Brightness.light ? Colors.white : const Color(0xFF1E293B),
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: brightness == Brightness.light ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+            width: 1,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: colorScheme.surfaceContainerHighest,
+        backgroundColor: brightness == Brightness.light ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
         selectedColor: colorScheme.primaryContainer,
-        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
+        side: BorderSide(
+          color: brightness == Brightness.light ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+        ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(8),
         ),
         labelStyle: TextStyle(
           color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
+          fontSize: 12,
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withAlpha(120),
+        fillColor: brightness == Brightness.light ? Colors.white : const Color(0xFF1E293B),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: brightness == Brightness.light ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.outlineVariant.withAlpha(80)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: brightness == Brightness.light ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        isDense: true,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          visualDensity: VisualDensity.compact,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -101,10 +128,10 @@ class MyApp extends StatelessWidget {
         ),
         textStyle: TextStyle(
           color: colorScheme.onInverseSurface,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w500,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         margin: const EdgeInsets.all(8),
         waitDuration: const Duration(milliseconds: 500),
         showDuration: const Duration(seconds: 2),
@@ -117,8 +144,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => EmployeeProvider(LocalEmployeeRepository())),
-        ChangeNotifierProvider(create: (_) => ApplianceProvider(LocalApplianceRepository())),
+        ChangeNotifierProvider(create: (_) => EmployeeProvider(ApiEmployeeRepository())),
+        ChangeNotifierProvider(create: (_) => ApplianceProvider(ApiApplianceRepository())),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -128,10 +155,60 @@ class MyApp extends StatelessWidget {
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: themeProvider.themeMode,
-            home: const MainDashboardScreen(),
+            home: const SessionWrapper(),
           );
         },
       ),
+    );
+  }
+}
+
+class SessionWrapper extends StatelessWidget {
+  const SessionWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: SessionManager().getUserId(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        final userId = snapshot.data;
+        if (userId == null) {
+          return const AuthScreen();
+        }
+
+        // Check if guest account is expired
+        return FutureBuilder<bool>(
+          future: SessionManager().isExpired(),
+          builder: (context, expirySnapshot) {
+            if (expirySnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final isExpired = expirySnapshot.data ?? false;
+            if (isExpired) {
+              // Clear session and return AuthScreen with warning
+              return FutureBuilder<void>(
+                future: SessionManager().clearSession(),
+                builder: (context, clearSnapshot) {
+                  return const AuthScreen(
+                    expirationMessage: 'Your 30-day guest period has expired. Please register to convert your account and save your logs.',
+                  );
+                },
+              );
+            }
+
+            return const MainDashboardScreen();
+          },
+        );
+      },
     );
   }
 }

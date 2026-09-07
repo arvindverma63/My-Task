@@ -58,6 +58,7 @@ class LocalEmployeeRepository implements EmployeeRepository {
   @override
   Future<void> saveAttendance(AttendanceEntry entry) async {
     final list = await getAttendance(entry.employeeId);
+    list.removeWhere((e) => e.id == entry.id);
     list.add(entry);
     await _saveAttendance(entry.employeeId, list);
   }
@@ -68,8 +69,10 @@ class LocalEmployeeRepository implements EmployeeRepository {
     final index = list.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
       list[index] = entry;
-      await _saveAttendance(entry.employeeId, list);
+    } else {
+      list.add(entry);
     }
+    await _saveAttendance(entry.employeeId, list);
   }
 
   @override

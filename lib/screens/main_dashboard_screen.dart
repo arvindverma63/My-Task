@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'employee_management_screen.dart';
 import 'ironing_dashboard_screen.dart';
 import 'maintenance_screen.dart';
-import 'warranty_screen.dart';
 import 'theme_settings_screen.dart';
 
 import '../providers/employee_provider.dart';
@@ -12,6 +12,9 @@ import '../providers/appliance_provider.dart';
 import '../models/employee_model.dart';
 import '../models/ironing_model.dart';
 import '../models/appliance_model.dart';
+import '../utils/session_manager.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
@@ -22,17 +25,20 @@ class MainDashboardScreen extends StatefulWidget {
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
   int _currentIndex = 0;
+  bool _isGuest = false;
+  int _guestDaysRemaining = 30;
+  String? _userId;
 
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _loadSession();
     _screens = [
       const EmployeeManagementScreen(),
       const IroningDashboardScreen(),
       const MaintenanceScreen(),
-      const WarrantyScreen(),
       ThemeSettingsScreen(
         onStartTour: _showTourGuideDialog,
         onRenewApp: _showRenewVerificationStep1,
@@ -41,6 +47,206 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstLaunch();
     });
+  }
+
+  Future<void> _loadSession() async {
+    final session = SessionManager();
+    final type = await session.getUserType();
+    final days = await session.getDaysRemaining();
+    final uid = await session.getUserId();
+    setState(() {
+      _isGuest = type == 'guest';
+      _guestDaysRemaining = days;
+      _userId = uid;
+    });
+  }
+
+  Widget _buildGuestBanner() {
+    if (!_isGuest) return const SizedBox.shrink();
+    
+    return Container(
+      color: Colors.orange.shade800,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Guest Mode: $_guestDaysRemaining days left',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _showUpgradeAccountDialog,
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.orange.shade900,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+              child: const Text(
+                'Upgrade',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpgradeAccountDialog() {
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlgState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          title: const Row(
+            children: [
+              Icon(Icons.upgrade_rounded, color: Colors.orange, size: 22),
+              SizedBox(width: 8),
+              Text('Convert to Member', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Upgrade your account to save helper, ironing, and appliance logs permanently in the cloud.',
+                    style: TextStyle(fontSize: 12, height: 1.3),
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                      prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                    ),
+                    validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter username';
+                    }
+                    if (value.trim().length < 4) {
+                      return 'Username must be at least 4 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDlgState(() => isSaving = true);
+
+                      try {
+                        final response = await http.post(
+                          Uri.parse('https://slateblue-guanaco-751834.hostingersite.com/api/convert-guest'),
+                          headers: {'Content-Type': 'application/json'},
+                          body: json.encode({
+                            'userId': _userId,
+                            'username': usernameController.text.trim(),
+                            'password': passwordController.text,
+                          }),
+                        );
+
+                        final data = json.decode(response.body);
+
+                        if (response.statusCode == 200 && data['success'] == true) {
+                          await SessionManager().saveSession(
+                            userId: data['userId'],
+                            username: data['username'],
+                            userType: data['userType'],
+                            expiresAt: data['expiresAt'],
+                          );
+                          await _loadSession();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Account upgraded successfully! Welcome aboard.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(data['error'] ?? 'Conversion failed.'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Network error. Check connection.'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      } finally {
+                        setDlgState(() => isSaving = false);
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Upgrade'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _checkFirstLaunch() async {
@@ -256,71 +462,71 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           final stepIcon = step['icon'] as IconData;
           final stepTitle = step['title'] as String;
           final stepDesc = step['desc'] as String;
-
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Padding(
-                padding: const EdgeInsets.all(28.0),
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircleAvatar(
-                      radius: 42,
+                      radius: 28,
                       backgroundColor: colorScheme.primaryContainer,
-                      child: Icon(stepIcon, size: 46, color: colorScheme.primary),
+                      child: Icon(stepIcon, size: 28, color: colorScheme.primary),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
                     Text(
                       stepTitle,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.2),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, letterSpacing: 0.1),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     Text(
                       stepDesc,
                       style: TextStyle(
                         color: colorScheme.onSurface,
-                        fontSize: 16,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        height: 1.4,
+                        fontWeight: FontWeight.normal,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Text(
                       'Step ${currentStep + 1} of ${steps.length}',
                       style: TextStyle(
                         color: colorScheme.primary,
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         steps.length,
                         (index) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: currentStep == index ? 18 : 8,
-                          height: 8,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: currentStep == index ? 14 : 6,
+                          height: 6,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(3),
                             color: currentStep == index ? colorScheme.primary : colorScheme.outlineVariant.withAlpha(150),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            visualDensity: VisualDensity.compact,
                           ),
                           onPressed: () {
                             setState(() => _currentIndex = 0);
@@ -328,13 +534,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           },
                           child: Text(
                             'Skip Tour',
-                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 15, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                         ),
                         FilledButton(
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            visualDensity: VisualDensity.compact,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           onPressed: () {
                             if (currentStep < steps.length - 1) {
@@ -350,12 +557,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             }
                           },
                           child: Text(
-                            currentStep == steps.length - 1 ? 'Finish Tour 🏁' : 'Next Step ➡️',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            currentStep == steps.length - 1 ? 'Finish 🏁' : 'Next ➡️',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -371,16 +578,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: colorScheme.error, size: 28),
-            const SizedBox(width: 12),
-            const Text('Renew App? (Step 1/2)'),
+            Icon(Icons.warning_rounded, color: Colors.red, size: 22),
+            SizedBox(width: 8),
+            Text('Reset & Renew App', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const Text(
-          'This will permanently delete all your existing domestic helpers, ironing logs, payments, and appliance data. The app will restart with a fresh set of sample data and the guided tour.',
+          'This will permanently delete all your domestic helpers, ironing logs, payments, and appliance data, and reload the fresh sample data.',
+          style: TextStyle(fontSize: 12.5, height: 1.3),
         ),
         actions: [
           TextButton(
@@ -389,11 +600,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           ),
           FilledButton(
             onPressed: () {
-              Navigator.pop(context); // Close Step 1 Dialog
-              _showRenewVerificationStep2(); // Open Step 2 Dialog
+              Navigator.pop(context);
+              _showRenewVerificationStep2();
             },
             style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
-            child: const Text('Proceed to Step 2'),
+            child: const Text('Proceed'),
           ),
         ],
       ),
@@ -410,12 +621,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           title: Row(
             children: [
-              Icon(Icons.lock_person_rounded, color: colorScheme.primary, size: 28),
-              const SizedBox(width: 12),
-              const Text('Verify Reset (Step 2/2)'),
+              Icon(Icons.lock_person_rounded, color: colorScheme.primary, size: 22),
+              const SizedBox(width: 8),
+              const Text('Verify Reset', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -423,15 +637,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'This action is irreversible. To proceed, please type the word "RENEW" in the input field below:',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                'Type "RENEW" to confirm reset:',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               TextField(
                 controller: verifyController,
                 autofocus: true,
                 decoration: const InputDecoration(
-                  labelText: 'Verification Word',
+                  labelText: 'Type RENEW',
                   hintText: 'RENEW',
                 ),
                 onChanged: (val) {
@@ -450,7 +664,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             FilledButton(
               onPressed: isButtonEnabled
                   ? () async {
-                      Navigator.pop(context); // Close dialog
+                      Navigator.pop(context);
                       await _renewAppAndShowTour();
                     }
                   : null,
@@ -500,56 +714,193 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        height: 68,
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primaryContainer,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(
-              Icons.people_alt_rounded,
-              color: _currentIndex == 0 ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(160),
+      body: Column(
+        children: [
+          _buildGuestBanner(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: _screens,
             ),
-            label: 'Attendance',
-          ),
-          NavigationDestination(
-            icon: Icon(
-              Icons.iron_rounded,
-              color: _currentIndex == 1 ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(160),
-            ),
-            label: 'Ironing',
-          ),
-          NavigationDestination(
-            icon: Icon(
-              Icons.build_rounded,
-              color: _currentIndex == 2 ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(160),
-            ),
-            label: 'Servicing',
-          ),
-          NavigationDestination(
-            icon: Icon(
-              Icons.security_rounded,
-              color: _currentIndex == 3 ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(160),
-            ),
-            label: 'Warranties',
-          ),
-          NavigationDestination(
-            icon: Icon(
-              Icons.settings_rounded,
-              color: _currentIndex == 4 ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(160),
-            ),
-            label: 'Settings',
           ),
         ],
       ),
+      bottomNavigationBar: _buildProfessionalBottomNav(colorScheme, isDark),
     );
   }
+
+  Widget _buildProfessionalBottomNav(ColorScheme colorScheme, bool isDark) {
+    final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final borderColor = isDark ? Colors.white.withAlpha(18) : Colors.black.withAlpha(12);
+
+    final navItems = [
+      const _NavItemData(
+        icon: Icons.people_alt_outlined,
+        selectedIcon: Icons.people_alt_rounded,
+        label: 'Attendance',
+      ),
+      const _NavItemData(
+        icon: Icons.iron_outlined,
+        selectedIcon: Icons.iron_rounded,
+        label: 'Ironing',
+      ),
+      const _NavItemData(
+        icon: Icons.devices_other_outlined,
+        selectedIcon: Icons.devices_other_rounded,
+        label: 'Appliances',
+      ),
+      _NavItemData(
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings_rounded,
+        label: 'Settings',
+        badgeDot: _isGuest,
+      ),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(
+          top: BorderSide(color: borderColor, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(isDark ? 60 : 8),
+            blurRadius: 14,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 54,
+          child: Row(
+            children: List.generate(navItems.length, (index) {
+              final item = navItems[index];
+              final isSelected = _currentIndex == index;
+
+              return Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    splashColor: colorScheme.primary.withAlpha(20),
+                    highlightColor: Colors.transparent,
+                    onTap: () {
+                      if (_currentIndex != index) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _currentIndex = index);
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Subtle top indicator bar
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          height: 2.5,
+                          width: isSelected ? 22 : 0,
+                          decoration: BoxDecoration(
+                            color: isSelected ? colorScheme.primary : Colors.transparent,
+                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(2)),
+                          ),
+                        ),
+                        // Icon capsule with micro-scale & optional badge
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 240),
+                              curve: Curves.easeOutCubic,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSelected ? 12 : 6,
+                                vertical: 3.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? colorScheme.primary.withAlpha(isDark ? 45 : 22)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: AnimatedScale(
+                                scale: isSelected ? 1.06 : 1.0,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutBack,
+                                child: Icon(
+                                  isSelected ? item.selectedIcon : item.icon,
+                                  size: 20.5,
+                                  color: isSelected
+                                      ? colorScheme.primary
+                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                ),
+                              ),
+                            ),
+                            if (item.badgeDot)
+                              Positioned(
+                                top: 1,
+                                right: isSelected ? 8 : 2,
+                                child: Container(
+                                  width: 6.5,
+                                  height: 6.5,
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade700,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: bg,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        // Label text with animated style
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 200),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                              letterSpacing: isSelected ? -0.2 : 0,
+                            ),
+                            child: Text(
+                              item.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItemData {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool badgeDot;
+
+  const _NavItemData({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    this.badgeDot = false,
+  });
 }

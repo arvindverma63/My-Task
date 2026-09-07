@@ -92,7 +92,7 @@ class ServiceRecord {
       id: map['id'] ?? '',
       applianceId: map['applianceId'] ?? '',
       serviceDate: map['serviceDate'] != null ? DateTime.parse(map['serviceDate']) : DateTime.now(),
-      price: (map['price'] ?? 0.0).toDouble(),
+      price: map['price'] != null ? (double.tryParse(map['price'].toString()) ?? 0.0) : 0.0,
       remarks: map['remarks'] ?? '',
       billPath: map['billPath'],
       createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : DateTime.now(),

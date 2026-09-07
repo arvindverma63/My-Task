@@ -56,7 +56,7 @@ class IronRate {
     return IronRate(
       id: map['id'] ?? '',
       clothingType: map['clothingType'] ?? '',
-      rate: (map['rate'] as num?)?.toDouble() ?? 0.0,
+      rate: map['rate'] != null ? (double.tryParse(map['rate'].toString()) ?? 0.0) : 0.0,
       date: DateTime.tryParse(map['date']?.toString() ?? '') ?? DateTime.now(),
     );
   }
@@ -95,7 +95,7 @@ class IroningRecord {
     final Map<String, int> parsedCount = {};
     if (rawCount is Map) {
       rawCount.forEach((k, v) {
-        parsedCount[k.toString()] = (v as num).toInt();
+        parsedCount[k.toString()] = int.tryParse(v.toString()) ?? 0;
       });
     }
     return IroningRecord(
@@ -103,7 +103,7 @@ class IroningRecord {
       workerId: map['workerId'] ?? map['employeeId'] ?? '',
       date: DateTime.tryParse(map['date']?.toString() ?? '') ?? DateTime.now(),
       clothesCount: parsedCount,
-      totalWage: (map['totalWage'] as num?)?.toDouble() ?? 0.0,
+      totalWage: map['totalWage'] != null ? (double.tryParse(map['totalWage'].toString()) ?? 0.0) : 0.0,
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }
@@ -142,7 +142,7 @@ class IroningPayment {
       id: map['id'] ?? '',
       workerId: map['workerId'] ?? map['employeeId'] ?? '',
       date: DateTime.tryParse(map['date']?.toString() ?? '') ?? DateTime.now(),
-      amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+      amount: map['amount'] != null ? (double.tryParse(map['amount'].toString()) ?? 0.0) : 0.0,
       description: map['description'] ?? '',
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );

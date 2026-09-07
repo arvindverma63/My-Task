@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/employee_provider.dart';
 import '../models/ironing_model.dart';
 
@@ -26,6 +28,32 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     super.dispose();
   }
 
+  List<Color> _getAvatarGradient(String name) {
+    final palettes = [
+      [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
+      [const Color(0xFF0EA5E9), const Color(0xFF0284C7)],
+      [const Color(0xFF10B981), const Color(0xFF059669)],
+      [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+      [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+      [const Color(0xFFEC4899), const Color(0xFFDB2777)],
+    ];
+    final hash = name.codeUnits.fold(0, (acc, c) => acc + c);
+    return palettes[hash % palettes.length];
+  }
+
+  Future<void> _makeCall(String contact) async {
+    final Uri url = Uri.parse('tel:$contact');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open phone dialer')),
+        );
+      }
+    }
+  }
+
   Widget _buildDialogInputField({
     required BuildContext context,
     required TextEditingController controller,
@@ -37,39 +65,32 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     int? maxLines,
     String? Function(String?)? validator,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines ?? 1,
       validator: validator,
+      style: TextStyle(fontSize: 13.5, color: isDark ? Colors.white : const Color(0xFF0F172A)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        prefixIcon: Icon(prefixIcon, color: colorScheme.primary.withAlpha(200)),
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF4F46E5), size: 18),
         prefixText: prefixText,
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withAlpha(50),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.error, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.8),
         ),
       ),
     );
@@ -79,7 +100,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
   Widget build(BuildContext context) {
     final employeeProvider = context.watch<EmployeeProvider>();
     final workers = employeeProvider.ironingWorkers;
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_selectedWorkerId == null || !workers.any((w) => w.id == _selectedWorkerId)) {
       if (workers.isNotEmpty) {
@@ -88,85 +109,153 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     }
 
     final selectedWorker = workers.isNotEmpty
-        ? workers.firstWhere((w) => w.id == _selectedWorkerId)
+        ? workers.firstWhere((w) => w.id == _selectedWorkerId, orElse: () => workers.first)
         : null;
 
     final mainHeaderCard = SafeArea(
       bottom: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0x1E3F51B5), // Indigo 12% alpha
-              Color(0x0A3F51B5), // Indigo 4% alpha
-            ],
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
+                : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x333F51B5), width: 1.5), // 20% alpha border
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(isDark ? 30 : 6),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withAlpha(80),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.iron_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.iron_rounded, color: Color(0xFF3F51B5), size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Ironing Registry',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                      Flexible(
+                        child: Text(
+                          'Ironing Registry',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4F46E5).withAlpha(isDark ? 60 : 30),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${workers.length} ${workers.length == 1 ? "worker" : "workers"}',
+                          style: const TextStyle(
+                            color: Color(0xFF4F46E5),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(
-                    'Track clothes count, rates, and payments',
+                    'Clothes count, rates & payments',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.onSurfaceVariant.withAlpha(180),
+                      fontSize: 10.5,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (selectedWorker != null) ...[
-                  IconButton.filledTonal(
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0x11FF0000),
-                      foregroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const SizedBox(width: 8),
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => _showAddWorkerDialog(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Ink(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    icon: const Icon(Icons.person_remove_rounded, size: 20),
-                    tooltip: 'Delete Selected Worker',
-                    onPressed: () => _confirmDeleteWorker(context, selectedWorker),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withAlpha(50),
+                      width: 0.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4F46E5).withAlpha(80),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                ],
-                IconButton.filled(
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF3F51B5),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_add_rounded, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Add Worker',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11.5,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
                   ),
-                  icon: const Icon(Icons.person_add_rounded, size: 20),
-                  tooltip: 'Add Worker',
-                  onPressed: () => _showAddWorkerDialog(context),
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -174,33 +263,83 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     );
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: null,
       body: selectedWorker == null
           ? Column(
               children: [
                 mainHeaderCard,
-                Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.iron_rounded, size: 64, color: colorScheme.outlineVariant),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No Ironing Workers Found',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Please add a worker to manage clothes and payments.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+                if (employeeProvider.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                      child: LinearProgressIndicator(
+                        minHeight: 2.5,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
                       ),
                     ),
+                  ),
+                Expanded(
+                  child: Center(
+                    child: employeeProvider.isLoading && workers.isEmpty
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(
+                                strokeWidth: 2.8,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Syncing ironing data...',
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.iron_rounded, size: 54, color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No Ironing Workers Found',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Add your dhobi or ironing helper to start tracking clothes and payments.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4F46E5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                                  ),
+                                  onPressed: () => _showAddWorkerDialog(context),
+                                  icon: const Icon(Icons.person_add_rounded, size: 17),
+                                  label: const Text('Add First Worker', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -208,40 +347,101 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
           : Column(
               children: [
                 mainHeaderCard,
+                if (employeeProvider.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                      child: LinearProgressIndicator(
+                        minHeight: 2.5,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                      ),
+                    ),
+                  ),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    children: [
-                      _buildWorkerSelector(workers, selectedWorker, colorScheme),
-                      const SizedBox(height: 16),
-                      _buildWorkerSummaryHeader(selectedWorker, colorScheme),
-                      const SizedBox(height: 16),
-                      _buildRateCardSection(selectedWorker, colorScheme),
-                      const SizedBox(height: 16),
-                      _buildActionRow(selectedWorker, colorScheme),
-                      const SizedBox(height: 20),
-                      TabBar(
-                        controller: _tabController,
-                        labelColor: colorScheme.primary,
-                        unselectedLabelColor: colorScheme.onSurfaceVariant,
-                        indicatorColor: colorScheme.primary,
-                        indicatorWeight: 3,
-                        tabs: const [
-                          Tab(icon: Icon(Icons.iron_rounded), text: 'Clothes Logs'),
-                          Tab(icon: Icon(Icons.payments_rounded), text: 'Payment Logs'),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 400,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _ClothesLogsTab(workerId: selectedWorker.id),
-                            _PaymentLogsTab(workerId: selectedWorker.id),
-                          ],
+                  child: RefreshIndicator(
+                    color: const Color(0xFF4F46E5),
+                    onRefresh: () => context.read<EmployeeProvider>().refreshData(),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      children: [
+                        _buildWorkerSelectorCard(workers, selectedWorker, isDark),
+                        const SizedBox(height: 8),
+                        _buildWorkerSummaryHeader(selectedWorker, isDark),
+                        const SizedBox(height: 8),
+                        _buildRateCardSection(selectedWorker, isDark),
+                        const SizedBox(height: 10),
+                        _buildActionRow(selectedWorker, isDark),
+                        const SizedBox(height: 12),
+                        // Custom Pill Segmented TabBar
+                        Container(
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE0E7FF),
+                              width: 1,
+                            ),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            onTap: (idx) => setState(() {}),
+                            indicator: BoxDecoration(
+                              color: const Color(0xFF4F46E5),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF4F46E5).withAlpha(80),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            labelColor: Colors.white,
+                            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            dividerColor: Colors.transparent,
+                            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                            tabs: const [
+                              Tab(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.checkroom_rounded, size: 16),
+                                    SizedBox(width: 6),
+                                    Text('Clothes Given Logs'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.payments_rounded, size: 16),
+                                    SizedBox(width: 6),
+                                    Text('Payment History'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        AnimatedBuilder(
+                          animation: _tabController,
+                          builder: (context, _) {
+                            return _tabController.index == 0
+                                ? _ClothesLogsTab(workerId: selectedWorker.id, shrinkWrap: true, physics: const NeverScrollableScrollPhysics())
+                                : _PaymentLogsTab(workerId: selectedWorker.id, shrinkWrap: true, physics: const NeverScrollableScrollPhysics());
+                          },
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -249,46 +449,114 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     );
   }
 
-  Widget _buildWorkerSelector(List<IroningWorker> workers, IroningWorker selected, ColorScheme colorScheme) {
-    return Card(
-      elevation: 0,
-      color: colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: colorScheme.primaryContainer,
-          child: Text(
-            selected.name[0].toUpperCase(),
-            style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onPrimaryContainer),
+  Widget _buildWorkerSelectorCard(List<IroningWorker> workers, IroningWorker selected, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(isDark ? 30 : 6),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
-        ),
-        title: const Text('Active Ironing Worker', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-        subtitle: Text(
-          selected.name,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-        ),
-        trailing: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.primary),
-        onTap: () => _showWorkerSelectionSheet(context, workers, selected),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _getAvatarGradient(selected.name),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                selected.name.isNotEmpty ? selected.name[0].toUpperCase() : '?',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: InkWell(
+              onTap: () => _showWorkerSelectionSheet(context, workers, selected),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        selected.name,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), size: 18),
+                    ],
+                  ),
+                  Text(
+                    selected.contact.isNotEmpty ? selected.contact : 'Tap to switch worker',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (selected.contact.isNotEmpty) ...[
+            IconButton(
+              icon: const Icon(Icons.call_rounded, size: 18, color: Color(0xFF10B981)),
+              style: IconButton.styleFrom(
+                backgroundColor: isDark ? const Color(0x2810B981) : const Color(0xFFECFDF5),
+                padding: const EdgeInsets.all(6),
+                minimumSize: Size.zero,
+              ),
+              tooltip: 'Call Worker',
+              onPressed: () => _makeCall(selected.contact),
+            ),
+            const SizedBox(width: 6),
+          ],
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+            style: IconButton.styleFrom(
+              backgroundColor: isDark ? const Color(0x28EF4444) : const Color(0xFFFEF2F2),
+              padding: const EdgeInsets.all(6),
+              minimumSize: Size.zero,
+            ),
+            tooltip: 'Remove Worker',
+            onPressed: () => _confirmDeleteWorker(context, selected),
+          ),
+        ],
       ),
     );
   }
 
   void _showWorkerSelectionSheet(BuildContext context, List<IroningWorker> workers, IroningWorker selected) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,7 +568,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant.withAlpha(120),
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -308,21 +576,26 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text(
-                        'Select Ironing Worker',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Text(
+                      'Select Ironing Worker',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
-                    IconButton.filledTonal(
-                      icon: const Icon(Icons.close_rounded, size: 20),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                        padding: const EdgeInsets.all(6),
+                        minimumSize: Size.zero,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Divider(),
+                const SizedBox(height: 10),
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -330,36 +603,56 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                     itemBuilder: (context, index) {
                       final w = workers[index];
                       final isSelected = w.id == selected.id;
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                        leading: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
-                          child: Text(
-                            w.name[0].toUpperCase(),
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? (isDark ? const Color(0x284F46E5) : const Color(0xFFEEF2FF))
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF4F46E5) : Colors.transparent,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                          leading: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: _getAvatarGradient(w.name)),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                             ),
                           ),
-                        ),
-                        title: Text(
-                          w.name,
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                          title: Text(
+                            w.name,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontSize: 13.5,
+                            ),
                           ),
+                          subtitle: w.contact.isNotEmpty
+                              ? Text(w.contact, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)))
+                              : null,
+                          trailing: isSelected
+                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF4F46E5), size: 20)
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              _selectedWorkerId = w.id;
+                            });
+                            Navigator.pop(context);
+                          },
                         ),
-                        subtitle: w.contact.isNotEmpty ? Text(w.contact) : null,
-                        trailing: isSelected
-                            ? Icon(Icons.check_circle_rounded, color: colorScheme.primary)
-                            : null,
-                        onTap: () {
-                          setState(() {
-                            _selectedWorkerId = w.id;
-                          });
-                          Navigator.pop(context);
-                        },
                       );
                     },
                   ),
@@ -372,8 +665,9 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     );
   }
 
-  Widget _buildWorkerSummaryHeader(IroningWorker worker, ColorScheme colorScheme) {
+  Widget _buildWorkerSummaryHeader(IroningWorker worker, bool isDark) {
     final provider = context.read<EmployeeProvider>();
+
     return FutureBuilder<List<dynamic>>(
       future: Future.wait([
         provider.getIroningRecords(worker.id),
@@ -398,101 +692,153 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
         }
 
         final balance = totalEarnings - totalPaid;
+        final settledPercentage = totalEarnings > 0 ? (totalPaid / totalEarnings).clamp(0.0, 1.0) : 0.0;
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [colorScheme.primary, Colors.deepPurple[600]!],
+              colors: isDark
+                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withAlpha(40),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: Colors.black.withAlpha(isDark ? 30 : 6),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: Column(
             children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      'EARNED',
-                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'TOTAL EARNED',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '₹${totalEarnings.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '$totalClothes pcs',
+                          style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 10),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${totalEarnings.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Container(height: 36, width: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'TOTAL PAID',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '₹${totalPaid.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: Color(0xFFD97706),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${payments.length} payments',
+                          style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 10),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '$totalClothes pcs',
-                      style: const TextStyle(color: Colors.white60, fontSize: 10),
+                  ),
+                  Container(height: 36, width: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'BALANCE',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '₹${balance.abs().toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: balance >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          balance >= 0 ? 'Due to dhobi' : 'Advance surplus',
+                          style: TextStyle(
+                            color: balance >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white24,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      'PAID',
-                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${totalPaid.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${payments.length} payments',
-                      style: const TextStyle(color: Colors.white60, fontSize: 10),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white24,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      'BALANCE',
-                      style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${balance.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: balance >= 0 ? const Color(0xFFA5D6A7) : const Color(0xFFEF9A9A),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Payout Settlement',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       ),
-                    ),
-                    Text(
-                      balance >= 0 ? 'Pending' : 'Overpaid',
-                      style: TextStyle(
-                        color: balance >= 0 ? const Color(0xFFA5D6A7).withAlpha(200) : const Color(0xFFEF9A9A).withAlpha(200),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                      Text(
+                        '${(settledPercentage * 100).toStringAsFixed(0)}% paid',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: settledPercentage,
+                      minHeight: 5,
+                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -501,7 +847,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     );
   }
 
-  Widget _buildRateCardSection(IroningWorker worker, ColorScheme colorScheme) {
+  Widget _buildRateCardSection(IroningWorker worker, bool isDark) {
     return FutureBuilder<List<IronRate>>(
       future: context.read<EmployeeProvider>().getIronRates(worker.id),
       builder: (context, snapshot) {
@@ -518,95 +864,94 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
           ratesMap[rate.clothingType] = typeRates.first.rate;
         }
 
-        return Card(
-          elevation: 0,
-          color: colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: colorScheme.outlineVariant.withAlpha(80), width: 1.2),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Ironing Rates Card',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Ironing Rate Chart',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                     ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.edit_rounded, size: 14),
-                      label: const Text('Edit Rates', style: TextStyle(fontSize: 12)),
-                      onPressed: () => _showEditRatesDialog(
-                        context,
-                        worker,
-                        ratesMap,
+                  ),
+                  InkWell(
+                    onTap: () => _showEditRatesDialog(context, worker, ratesMap),
+                    borderRadius: BorderRadius.circular(6),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_rounded, size: 12, color: Color(0xFF4F46E5)),
+                          SizedBox(width: 4),
+                          Text('Edit Rates', style: TextStyle(fontSize: 11.5, color: Color(0xFF4F46E5), fontWeight: FontWeight.bold)),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ratesMap.entries.map((e) => _buildRateIndicator(e.key, e.value, colorScheme)).toList(),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: ratesMap.entries.map((e) => _buildRateIndicator(e.key, e.value, isDark)).toList(),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildRateIndicator(String label, double rate, ColorScheme colorScheme) {
+  Widget _buildRateIndicator(String label, double rate, bool isDark) {
     final color = _getClothTypeColor(label);
     final icon = _getClothTypeIcon(label);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withAlpha(15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(50), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withAlpha(8),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: color.withAlpha(isDark ? 30 : 18),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(isDark ? 80 : 50), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: 16,
-            backgroundColor: color.withAlpha(25),
-            child: Icon(icon, color: color, size: 16),
+            radius: 10,
+            backgroundColor: color.withAlpha(isDark ? 50 : 30),
+            child: Icon(icon, color: color, size: 11),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: 10.5,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 2),
               Text(
                 '₹${rate.toStringAsFixed(0)}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: Colors.green[700],
+                  fontSize: 12,
+                  color: Color(0xFF10B981),
                 ),
               ),
             ],
@@ -616,35 +961,39 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     );
   }
 
-  Widget _buildActionRow(IroningWorker worker, ColorScheme colorScheme) {
+  Widget _buildActionRow(IroningWorker worker, bool isDark) {
     return Row(
       children: [
         Expanded(
           child: SizedBox(
-            height: 52,
+            height: 42,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.green[700],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 1.5,
               ),
               onPressed: () => _showAddClothesDialog(context, worker),
-              icon: const Icon(Icons.iron_rounded, size: 20),
-              label: const Text('Add Clothes Given', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              icon: const Icon(Icons.checkroom_rounded, size: 17),
+              label: const Text('Add Clothes Given', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: SizedBox(
-            height: 52,
+            height: 42,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.amber[800],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: const Color(0xFFD97706),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 1.5,
               ),
               onPressed: () => _showAddPaymentDialog(context, worker),
-              icon: const Icon(Icons.payments_rounded, size: 20),
-              label: const Text('Pay for Ironing', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              icon: const Icon(Icons.payments_rounded, size: 17),
+              label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
             ),
           ),
         ),
@@ -656,110 +1005,153 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
     final contactController = TextEditingController();
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withAlpha(20),
-                      border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(50))),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: colorScheme.primary.withAlpha(30),
-                          child: Icon(Icons.person_add_alt_1_rounded, color: colorScheme.primary, size: 20),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlgState) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
+                              : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
                         ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Add Ironing Worker',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE))),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: const Color(0xFF4F46E5),
+                            child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 20),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildDialogInputField(
-                          context: context,
-                          controller: nameController,
-                          label: 'Name',
-                          prefixIcon: Icons.badge_rounded,
-                          validator: (v) => v == null || v.trim().isEmpty ? 'Enter name' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildDialogInputField(
-                          context: context,
-                          controller: contactController,
-                          label: 'Contact Phone (Optional)',
-                          prefixIcon: Icons.phone_rounded,
-                          keyboardType: TextInputType.phone,
-                          validator: null, // Optional, can be any length or empty
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Add Ironing Worker / Dhobi',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                              ),
+                            ),
                           ),
-                          onPressed: () async {
-                            if (!formKey.currentState!.validate()) return;
-                            final worker = IroningWorker(
-                              id: DateTime.now().millisecondsSinceEpoch.toString(),
-                              name: nameController.text.trim(),
-                              contact: contactController.text.trim(),
-                              joiningDate: DateTime.now(),
-                            );
-                            await context.read<EmployeeProvider>().addIroningWorker(worker);
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              setState(() {
-                                _selectedWorkerId = worker.id;
-                              });
-                            }
-                          },
-                          child: const Text('Add Worker'),
-                        ),
-                      ],
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black.withAlpha(20),
+                              padding: const EdgeInsets.all(4),
+                              minimumSize: Size.zero,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _buildDialogInputField(
+                            context: context,
+                            controller: nameController,
+                            label: 'Worker Name',
+                            prefixIcon: Icons.badge_rounded,
+                            validator: (v) => v == null || v.trim().isEmpty ? 'Enter worker name' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDialogInputField(
+                            context: context,
+                            controller: contactController,
+                            label: 'Contact Phone (Optional)',
+                            prefixIcon: Icons.phone_rounded,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isSaving ? null : () => Navigator.pop(context),
+                            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F46E5),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setDlgState(() => isSaving = true);
+                                    try {
+                                      final worker = IroningWorker(
+                                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                        name: nameController.text.trim(),
+                                        contact: contactController.text.trim(),
+                                        joiningDate: DateTime.now(),
+                                      );
+                                      await context.read<EmployeeProvider>().addIroningWorker(worker);
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        setState(() {
+                                          _selectedWorkerId = worker.id;
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Ironing worker "${worker.name}" added'),
+                                            backgroundColor: const Color(0xFF059669),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to add worker: $e'), backgroundColor: Colors.redAccent),
+                                        );
+                                      }
+                                    } finally {
+                                      setDlgState(() => isSaving = false);
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text('Add Worker', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -769,47 +1161,39 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
   }
 
   void _confirmDeleteWorker(BuildContext context, IroningWorker worker) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 440),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Remove Worker?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Text('Are you sure you want to remove ${worker.name}? This will delete all their ironing logs.'),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                    onPressed: () async {
-                      await context.read<EmployeeProvider>().deleteIroningWorker(worker.id);
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        setState(() {
-                          _selectedWorkerId = null;
-                        });
-                      }
-                    },
-                    child: const Text('Remove'),
-                  ),
-                ],
-              )
-            ],
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Remove Worker?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Are you sure you want to remove ${worker.name}? This will delete all their recorded ironing and payment logs.',
+          style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : const Color(0xFF475569)),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            onPressed: () async {
+              await context.read<EmployeeProvider>().deleteIroningWorker(worker.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedWorkerId = null;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Worker removed'), backgroundColor: Color(0xFFDC2626)),
+                );
+              }
+            },
+            child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -820,23 +1204,25 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     current.forEach((key, val) {
       controllers[key] = TextEditingController(text: val.toStringAsFixed(0));
     });
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
       builder: (context) {
         bool showAddForm = false;
+        bool isSaving = false;
         final nameController = TextEditingController();
         final rateController = TextEditingController();
 
         return StatefulBuilder(
           builder: (context, setDlgState) => Dialog(
             insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             clipBehavior: Clip.antiAlias,
             child: Container(
               width: double.infinity,
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: SingleChildScrollView(
                 child: Form(
                   key: formKey,
@@ -844,82 +1230,98 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withAlpha(20),
-                          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(50))),
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
+                                : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                          ),
+                          border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE))),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: colorScheme.primary.withAlpha(30),
-                              child: Icon(Icons.edit_rounded, color: colorScheme.primary, size: 20),
+                              backgroundColor: const Color(0xFF4F46E5),
+                              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Edit Ironing Rates',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                                ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 20),
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.black.withAlpha(20),
+                                padding: const EdgeInsets.all(4),
+                                minimumSize: Size.zero,
+                              ),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ],
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
                             ...controllers.entries.map((entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
-                              child: _buildDialogInputField(
-                                context: context,
-                                controller: entry.value,
-                                label: '${entry.key} Rate (₹)',
-                                prefixIcon: Icons.currency_rupee_rounded,
-                                keyboardType: TextInputType.number,
-                                validator: (v) => v == null || double.tryParse(v) == null || double.parse(v) < 0 ? 'Enter valid rate' : null,
-                              ),
-                            )),
-                            
-                            const SizedBox(height: 8),
+                                  padding: const EdgeInsets.only(bottom: 10.0),
+                                  child: _buildDialogInputField(
+                                    context: context,
+                                    controller: entry.value,
+                                    label: '${entry.key} Rate (₹)',
+                                    prefixIcon: Icons.currency_rupee_rounded,
+                                    keyboardType: TextInputType.number,
+                                    validator: (v) => v == null || double.tryParse(v) == null || double.parse(v) < 0 ? 'Enter valid rate' : null,
+                                  ),
+                                )),
+                            const SizedBox(height: 4),
                             if (!showAddForm)
                               OutlinedButton.icon(
                                 onPressed: () => setDlgState(() => showAddForm = true),
-                                icon: const Icon(Icons.add_rounded),
-                                label: const Text('Add Custom Rate Type'),
+                                icon: const Icon(Icons.add_rounded, size: 16),
+                                label: const Text('Add Custom Cloth Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                 style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  foregroundColor: const Color(0xFF4F46E5),
+                                  side: const BorderSide(color: Color(0xFF4F46E5)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 ),
                               )
                             else
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainerHighest.withAlpha(40),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+                                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('New Rate Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorScheme.primary)),
-                                    const SizedBox(height: 12),
+                                    const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF4F46E5))),
+                                    const SizedBox(height: 8),
                                     Row(
                                       children: [
                                         Expanded(
                                           flex: 2,
                                           child: TextField(
                                             controller: nameController,
+                                            style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                                             decoration: InputDecoration(
                                               labelText: 'Cloth Name',
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              hintText: 'e.g. Kurta',
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                             ),
                                           ),
                                         ),
@@ -928,17 +1330,18 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                           flex: 1,
                                           child: TextField(
                                             controller: rateController,
+                                            style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                             decoration: InputDecoration(
-                                              labelText: 'Rate',
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              labelText: 'Rate (₹)',
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
@@ -948,10 +1351,15 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                             rateController.clear();
                                             showAddForm = false;
                                           }),
-                                          child: const Text('Cancel'),
+                                          child: const Text('Cancel', style: TextStyle(fontSize: 12)),
                                         ),
-                                        const SizedBox(width: 8),
+                                        const SizedBox(width: 6),
                                         FilledButton(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: const Color(0xFF4F46E5),
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
                                           onPressed: () {
                                             final name = nameController.text.trim();
                                             final val = double.tryParse(rateController.text) ?? 0.0;
@@ -963,7 +1371,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                               showAddForm = false;
                                             });
                                           },
-                                          child: const Text('Add'),
+                                          child: const Text('Add', style: TextStyle(fontSize: 12)),
                                         ),
                                       ],
                                     )
@@ -974,46 +1382,63 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                              onPressed: isSaving ? null : () => Navigator.pop(context),
+                              child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
                             ),
                             const SizedBox(width: 8),
                             FilledButton(
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                backgroundColor: const Color(0xFF4F46E5),
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onPressed: () async {
-                                if (!formKey.currentState!.validate()) return;
-                                final provider = context.read<EmployeeProvider>();
-                                final now = DateTime.now();
+                              onPressed: isSaving
+                                  ? null
+                                  : () async {
+                                      if (!formKey.currentState!.validate()) return;
+                                      setDlgState(() => isSaving = true);
+                                      try {
+                                        final provider = context.read<EmployeeProvider>();
+                                        final now = DateTime.now();
 
-                                for (final entry in controllers.entries) {
-                                  final type = entry.key;
-                                  final val = double.parse(entry.value.text);
-                                  final original = current[type] ?? -1.0;
-                                  if (val != original) {
-                                    final rate = IronRate(
-                                      id: '${type}_${now.millisecondsSinceEpoch}',
-                                      clothingType: type,
-                                      rate: val,
-                                      date: now,
-                                    );
-                                    await provider.saveIronRate(worker.id, rate);
-                                  }
-                                }
+                                        for (final entry in controllers.entries) {
+                                          final type = entry.key;
+                                          final val = double.parse(entry.value.text);
+                                          final original = current[type] ?? -1.0;
+                                          if (val != original) {
+                                            final rate = IronRate(
+                                              id: '${type}_${now.millisecondsSinceEpoch}',
+                                              clothingType: type,
+                                              rate: val,
+                                              date: now,
+                                            );
+                                            await provider.saveIronRate(worker.id, rate);
+                                          }
+                                        }
 
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                  setState(() {});
-                                }
-                              },
-                              child: const Text('Save Rates'),
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                          setState(() {});
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Rates updated'), backgroundColor: Color(0xFF059669)),
+                                          );
+                                        }
+                                      } finally {
+                                        setDlgState(() => isSaving = false);
+                                      }
+                                    },
+                              child: isSaving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    )
+                                  : const Text('Save Rates', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -1034,11 +1459,11 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
       context: context,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         clipBehavior: Clip.antiAlias,
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 480),
+          constraints: const BoxConstraints(maxWidth: 440),
           child: _AddClothesDialog(worker: worker, onSaved: () => setState(() {})),
         ),
       ),
@@ -1050,18 +1475,23 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
     final amountController = TextEditingController();
     final descController = TextEditingController();
     DateTime paymentDate = DateTime.now();
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isSaving = false;
+
+    final presetAmounts = [200, 500, 1000, 2000];
+    final presetReasons = ['Weekly Settlement', 'Advance', 'Full Payment'];
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDlgState) => Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           clipBehavior: Clip.antiAlias,
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
               child: Form(
                 key: formKey,
@@ -1069,35 +1499,65 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withAlpha(20),
-                        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(50))),
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF78350F), const Color(0xFFB45309)]
+                              : [const Color(0xFFFEF3C7), const Color(0xFFFDE68A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF92400E) : const Color(0xFFFCD34D))),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: Colors.amber.withAlpha(30),
-                            child: Icon(Icons.payments_rounded, color: Colors.amber[800], size: 20),
+                            backgroundColor: const Color(0xFFD97706),
+                            child: const Icon(Icons.payments_rounded, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Pay for Ironing',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pay for Ironing',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isDark ? Colors.white : const Color(0xFF78350F),
+                                  ),
+                                ),
+                                Text(
+                                  'Payee: ${worker.name}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 20),
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black.withAlpha(20),
+                              padding: const EdgeInsets.all(4),
+                              minimumSize: Size.zero,
+                            ),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildDialogInputField(
                             context: context,
@@ -1105,18 +1565,61 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                             label: 'Amount Paid (₹)',
                             prefixIcon: Icons.currency_rupee_rounded,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (v) => v == null || double.tryParse(v) == null || double.parse(v) <= 0 ? 'Enter valid positive amount' : null,
+                            validator: (v) => v == null || double.tryParse(v) == null || double.parse(v) <= 0 ? 'Enter valid amount' : null,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
+                          // Preset Amount Chips
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: presetAmounts.map((amt) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: ActionChip(
+                                    label: Text('+₹$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                    backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                    side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                    onPressed: () {
+                                      final current = double.tryParse(amountController.text) ?? 0;
+                                      amountController.text = (current + amt).toStringAsFixed(0);
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           _buildDialogInputField(
                             context: context,
                             controller: descController,
-                            label: 'Remarks / Notes',
-                            prefixIcon: Icons.description_rounded,
-                            hintText: 'e.g. Paid weekly wage',
+                            label: 'Remarks / Notes (Optional)',
+                            prefixIcon: Icons.edit_note_rounded,
+                            hintText: 'e.g. Weekly settlement...',
                             maxLines: 2,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
+                          // Preset Reason Chips
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: presetReasons.map((reason) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: ActionChip(
+                                    label: Text(reason, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
+                                    backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                    side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                    onPressed: () {
+                                      descController.text = reason;
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           InkWell(
                             onTap: () async {
                               final date = await showDatePicker(
@@ -1127,22 +1630,28 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                               );
                               if (date != null) setDlgState(() => paymentDate = date);
                             },
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest.withAlpha(80),
-                                border: Border.all(color: colorScheme.outlineVariant.withAlpha(80)),
-                                borderRadius: BorderRadius.circular(16),
+                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.calendar_today_rounded, size: 18, color: colorScheme.primary),
-                                  const SizedBox(width: 12),
+                                  const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFD97706)),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    'Date: ${paymentDate.day}/${paymentDate.month}/${paymentDate.year}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    'Date: ${DateFormat('dd MMMM yyyy').format(paymentDate)}',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
                                   ),
+                                  const Spacer(),
+                                  const Icon(Icons.arrow_drop_down_rounded, size: 20),
                                 ],
                               ),
                             ),
@@ -1151,45 +1660,76 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                            onPressed: isSaving ? null : () => Navigator.pop(context),
+                            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
                           ),
                           const SizedBox(width: 8),
                           FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: Colors.amber[800],
+                              backgroundColor: const Color(0xFFD97706),
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 2,
                             ),
-                            onPressed: () async {
-                              if (!formKey.currentState!.validate()) return;
-                              final amount = double.parse(amountController.text);
-                              final payment = IroningPayment(
-                                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                                workerId: worker.id,
-                                date: paymentDate,
-                                amount: amount,
-                                description: descController.text.trim(),
-                                createdAt: DateTime.now(),
-                              );
-                              await context.read<EmployeeProvider>().saveIroningPayment(worker.id, payment);
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                                setState(() {});
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Paid ₹$amount to ${worker.name}'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              }
-                            },
-                            child: const Text('Confirm Payment'),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setDlgState(() => isSaving = true);
+                                    try {
+                                      final amount = double.parse(amountController.text);
+                                      final payment = IroningPayment(
+                                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                        workerId: worker.id,
+                                        date: paymentDate,
+                                        amount: amount,
+                                        description: descController.text.trim().isNotEmpty
+                                            ? descController.text.trim()
+                                            : 'Weekly Payment',
+                                        createdAt: DateTime.now(),
+                                      );
+                                      await context.read<EmployeeProvider>().saveIroningPayment(worker.id, payment);
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        setState(() {});
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                                const SizedBox(width: 8),
+                                                Text('Paid ₹${amount.toStringAsFixed(0)} to ${worker.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                              ],
+                                            ),
+                                            backgroundColor: const Color(0xFF059669),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to save payment: $e'), backgroundColor: Colors.redAccent),
+                                        );
+                                      }
+                                    } finally {
+                                      setDlgState(() => isSaving = false);
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text('Confirm Payment', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -1219,6 +1759,7 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
   Map<String, int> _counts = {};
   Map<String, double> _rates = {};
   bool _ratesLoaded = false;
+  bool _isSaving = false;
 
   bool _showAddCustomForm = false;
   final _customNameController = TextEditingController();
@@ -1277,338 +1818,448 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
     return total;
   }
 
-
+  int get _totalPieces {
+    int count = 0;
+    _counts.forEach((_, c) => count += c);
+    return count;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.withAlpha(20),
-              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(50))),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.green.withAlpha(30),
-                  child: const Icon(Icons.iron_rounded, color: Colors.green, size: 20),
+    return Container(
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF064E3B), const Color(0xFF047857)]
+                      : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
                 ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Record Clothes Given',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0))),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: const Color(0xFF10B981),
+                    child: const Icon(Icons.checkroom_rounded, color: Colors.white, size: 20),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null) setState(() => _selectedDate = date);
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withAlpha(80),
-                      border: Border.all(color: colorScheme.outlineVariant.withAlpha(80)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today_rounded, size: 18, color: colorScheme.primary),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Dynamic counter list
-                ..._counts.keys.map((type) => Column(
-                  children: [
-                    _buildCounterRow(type, _counts[type] ?? 0, (val) {
-                      setState(() => _counts[type] = val);
-                    }, colorScheme),
-                    const SizedBox(height: 8),
-                  ],
-                )),
-                
-                const SizedBox(height: 8),
-                
-                // Add custom form or button
-                if (!_showAddCustomForm)
-                  OutlinedButton.icon(
-                    onPressed: () => setState(() => _showAddCustomForm = true),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add Custom Cloth Type'),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      side: BorderSide(color: colorScheme.primary.withAlpha(120)),
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withAlpha(40),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
-                    ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'New Cloth Type',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colorScheme.primary),
+                          'Record Clothes Given',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: isDark ? Colors.white : const Color(0xFF064E3B),
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: _customNameController,
-                                decoration: InputDecoration(
-                                  labelText: 'Cloth Name',
-                                  hintText: 'e.g. Kurta',
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 1,
-                              child: TextFormField(
-                                controller: _customRateController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: InputDecoration(
-                                  labelText: 'Rate (₹)',
-                                  hintText: 'e.g. 8',
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _customNameController.clear();
-                                  _customRateController.clear();
-                                  _showAddCustomForm = false;
-                                });
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            const SizedBox(width: 8),
-                            FilledButton(
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              onPressed: () async {
-                                final name = _customNameController.text.trim();
-                                final rateVal = double.tryParse(_customRateController.text) ?? 0.0;
-                                if (name.isEmpty || rateVal <= 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Please enter valid name and rate')),
-                                  );
-                                  return;
-                                }
-                                
-                                setState(() {
-                                  _counts[name] = 0;
-                                  _rates[name] = rateVal;
-                                  _showAddCustomForm = false;
-                                  _customNameController.clear();
-                                  _customRateController.clear();
-                                });
-                                
-                                final provider = context.read<EmployeeProvider>();
-                                final now = DateTime.now();
-                                final rate = IronRate(
-                                  id: '${name}_${now.millisecondsSinceEpoch}',
-                                  clothingType: name,
-                                  rate: rateVal,
-                                  date: now,
-                                );
-                                await provider.saveIronRate(widget.worker.id, rate);
-                              },
-                              child: const Text('Add'),
-                            ),
-                          ],
+                        Text(
+                          'Worker: ${widget.worker.name}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF047857),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(20),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green.withAlpha(100)),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withAlpha(20),
+                      padding: const EdgeInsets.all(4),
+                      minimumSize: Size.zero,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total Wage:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(
-                        '₹${_totalEarnings.toStringAsFixed(0)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.green),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) setState(() => _selectedDate = date);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: _totalEarnings <= 0
-                      ? null
-                      : () async {
-                          final record = IroningRecord(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            workerId: widget.worker.id,
-                            date: _selectedDate,
-                            clothesCount: Map.fromEntries(
-                              _counts.entries.where((e) => e.value > 0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF10B981)),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Date: ${DateFormat('dd MMMM yyyy').format(_selectedDate)}',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
                             ),
-                            totalWage: _totalEarnings,
-                            createdAt: DateTime.now(),
-                          );
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
 
-                          await context.read<EmployeeProvider>().saveIroningRecord(widget.worker.id, record);
+                  // Dynamic counter list
+                  ..._counts.keys.map((type) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildCounterRow(type, _counts[type] ?? 0, (val) {
+                          setState(() => _counts[type] = val);
+                        }, isDark),
+                      )),
 
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            widget.onSaved();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Recorded clothes successfully'),
-                                backgroundColor: Colors.green,
+                  const SizedBox(height: 6),
+
+                  // Add custom cloth type form
+                  if (!_showAddCustomForm)
+                    OutlinedButton.icon(
+                      onPressed: () => setState(() => _showAddCustomForm = true),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Add Custom Cloth Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF4F46E5),
+                        side: const BorderSide(color: Color(0xFF4F46E5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF4F46E5))),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: _customNameController,
+                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  decoration: InputDecoration(
+                                    labelText: 'Cloth Name',
+                                    hintText: 'e.g. Kurta',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                ),
                               ),
-                            );
-                          }
-                        },
-                  child: const Text('Save Record'),
-                ),
-              ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                  controller: _customRateController,
+                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Rate (₹)',
+                                    hintText: 'e.g. 8',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _customNameController.clear();
+                                    _customRateController.clear();
+                                    _showAddCustomForm = false;
+                                  });
+                                },
+                                child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 6),
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4F46E5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () async {
+                                  final name = _customNameController.text.trim();
+                                  final rateVal = double.tryParse(_customRateController.text) ?? 0.0;
+                                  if (name.isEmpty || rateVal <= 0) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Please enter valid name and rate')),
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    _counts[name] = 0;
+                                    _rates[name] = rateVal;
+                                    _showAddCustomForm = false;
+                                    _customNameController.clear();
+                                    _customRateController.clear();
+                                  });
+
+                                  final provider = context.read<EmployeeProvider>();
+                                  final now = DateTime.now();
+                                  final rate = IronRate(
+                                    id: '${name}_${now.millisecondsSinceEpoch}',
+                                    clothingType: name,
+                                    rate: rateVal,
+                                    date: now,
+                                  );
+                                  await provider.saveIronRate(widget.worker.id, rate);
+                                },
+                                child: const Text('Add', style: TextStyle(fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 14),
+                  // Total Wage Live Summary Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF064E3B), const Color(0xFF047857)]
+                            : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Ironing Wage',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: isDark ? Colors.white : const Color(0xFF064E3B),
+                              ),
+                            ),
+                            Text(
+                              '$_totalPieces pieces selected',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF047857),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '₹${_totalEarnings.toStringAsFixed(0)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF10B981)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isSaving ? null : () => Navigator.pop(context),
+                    child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
+                    ),
+                    onPressed: (_totalEarnings <= 0 || _isSaving)
+                        ? null
+                        : () async {
+                            setState(() => _isSaving = true);
+                            try {
+                              final record = IroningRecord(
+                                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                workerId: widget.worker.id,
+                                date: _selectedDate,
+                                clothesCount: Map.fromEntries(
+                                  _counts.entries.where((e) => e.value > 0),
+                                ),
+                                totalWage: _totalEarnings,
+                                createdAt: DateTime.now(),
+                              );
+
+                              await context.read<EmployeeProvider>().saveIroningRecord(widget.worker.id, record);
+
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                widget.onSaved();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                        const SizedBox(width: 8),
+                                        Text('Recorded $_totalPieces clothes (₹${_totalEarnings.toStringAsFixed(0)})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    backgroundColor: const Color(0xFF059669),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to save record: $e'), backgroundColor: Colors.redAccent),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isSaving = false);
+                            }
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text('Save Clothes Record', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCounterRow(String type, int current, ValueChanged<int> onChanged, ColorScheme colorScheme) {
+  Widget _buildCounterRow(String type, int current, ValueChanged<int> onChanged, bool isDark) {
     final rate = _rates[type] ?? 0.0;
     final color = _getClothTypeColor(type);
     final icon = _getClothTypeIcon(type);
-    
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withAlpha(50), width: 1),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: current > 0 ? color.withAlpha(isDark ? 100 : 70) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+          width: current > 0 ? 1.4 : 1,
+        ),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 20,
-            backgroundColor: color.withAlpha(20),
-            child: Icon(icon, color: color, size: 20),
+            radius: 16,
+            backgroundColor: color.withAlpha(isDark ? 40 : 25),
+            child: Icon(icon, color: color, size: 16),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   type,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
                 ),
                 Text(
-                  'Rate: ₹${rate.toStringAsFixed(0)}',
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  'Rate: ₹${rate.toStringAsFixed(0)} / pc',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ),
           Row(
             children: [
-              IconButton.filledTonal(
+              IconButton(
                 style: IconButton.styleFrom(
+                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
                   padding: EdgeInsets.zero,
-                  minimumSize: const Size(36, 36),
+                  minimumSize: const Size(32, 32),
                 ),
-                icon: const Icon(Icons.remove_rounded, size: 18),
+                icon: Icon(Icons.remove_rounded, size: 16, color: current > 0 ? (isDark ? Colors.white : const Color(0xFF0F172A)) : Colors.grey),
                 onPressed: current > 0 ? () => onChanged(current - 1) : null,
               ),
               Container(
-                width: 36,
+                width: 34,
                 alignment: Alignment.center,
                 child: Text(
                   '$current',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: current > 0 ? const Color(0xFF10B981) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  ),
                 ),
               ),
-              IconButton.filledTonal(
+              IconButton(
                 style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
                   padding: EdgeInsets.zero,
-                  minimumSize: const Size(36, 36),
+                  minimumSize: const Size(32, 32),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
+                icon: const Icon(Icons.add_rounded, size: 16),
                 onPressed: () => onChanged(current + 1),
               ),
             ],
@@ -1621,21 +2272,50 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
 
 class _ClothesLogsTab extends StatelessWidget {
   final String workerId;
-  const _ClothesLogsTab({required this.workerId});
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
+  const _ClothesLogsTab({
+    required this.workerId,
+    this.shrinkWrap = false,
+    this.physics,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FutureBuilder<List<IroningRecord>>(
       future: context.watch<EmployeeProvider>().getIroningRecords(workerId),
       builder: (context, snapshot) {
         final records = snapshot.data ?? [];
         if (records.isEmpty) {
-          return const Center(
-            child: Text(
-              'No clothes records found.',
-              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.checkroom_rounded, size: 36, color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No clothes records found.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap "Add Clothes Given" above to log laundry.',
+                    style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -1643,33 +2323,38 @@ class _ClothesLogsTab extends StatelessWidget {
         records.sort((a, b) => b.date.compareTo(a.date));
 
         return ListView.builder(
-          padding: const EdgeInsets.only(top: 8),
+          shrinkWrap: shrinkWrap,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 2, bottom: 8),
           itemCount: records.length,
           itemBuilder: (context, index) {
             final rec = records[index];
+
+            int totalPcs = 0;
+            rec.clothesCount.forEach((_, c) => totalPcs += c);
 
             final chips = rec.clothesCount.entries.map((e) {
               final color = _getClothTypeColor(e.key);
               final icon = _getClothTypeIcon(e.key);
               return Container(
-                margin: const EdgeInsets.only(right: 6, top: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                margin: const EdgeInsets.only(right: 5, top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withAlpha(60), width: 1),
+                  color: color.withAlpha(isDark ? 30 : 18),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: color.withAlpha(isDark ? 70 : 45), width: 0.8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(icon, color: color, size: 12),
-                    const SizedBox(width: 6),
+                    Icon(icon, color: color, size: 11),
+                    const SizedBox(width: 4),
                     Text(
                       '${e.value} ${e.key}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
                   ],
@@ -1677,39 +2362,77 @@ class _ClothesLogsTab extends StatelessWidget {
               );
             }).toList();
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              elevation: 0,
-              color: colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                leading: CircleAvatar(
-                  backgroundColor: Colors.green.withAlpha(20),
-                  child: const Icon(Icons.iron_rounded, color: Colors.green),
-                ),
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '₹${rec.totalWage.toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    Text(
-                      '${rec.date.day}/${rec.date.month}/${rec.date.year}',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant.withAlpha(180)),
-                    ),
-                  ],
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Wrap(
-                    children: chips,
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(isDark ? 25 : 5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
                   ),
-                ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withAlpha(isDark ? 40 : 25),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.checkroom_rounded, color: Color(0xFF10B981), size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '₹${rec.totalWage.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15.5,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withAlpha(isDark ? 30 : 15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '$totalPcs pcs',
+                              style: const TextStyle(
+                                color: Color(0xFF059669),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        DateFormat('EEE, d MMM yyyy').format(rec.date),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(children: chips),
+                ],
               ),
             );
           },
@@ -1721,21 +2444,50 @@ class _ClothesLogsTab extends StatelessWidget {
 
 class _PaymentLogsTab extends StatelessWidget {
   final String workerId;
-  const _PaymentLogsTab({required this.workerId});
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
+  const _PaymentLogsTab({
+    required this.workerId,
+    this.shrinkWrap = false,
+    this.physics,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FutureBuilder<List<IroningPayment>>(
       future: context.watch<EmployeeProvider>().getIroningPayments(workerId),
       builder: (context, snapshot) {
         final payments = snapshot.data ?? [];
         if (payments.isEmpty) {
-          return const Center(
-            child: Text(
-              'No ironing payments recorded.',
-              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.payments_rounded, size: 36, color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No ironing payments recorded.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap "Record Payment" to log paid money.',
+                    style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -1743,46 +2495,91 @@ class _PaymentLogsTab extends StatelessWidget {
         payments.sort((a, b) => b.date.compareTo(a.date));
 
         return ListView.builder(
-          padding: const EdgeInsets.only(top: 8),
+          shrinkWrap: shrinkWrap,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 2, bottom: 8),
           itemCount: payments.length,
           itemBuilder: (context, index) {
             final pay = payments[index];
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              elevation: 0,
-              color: colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100), width: 1.5),
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(isDark ? 25 : 5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: CircleAvatar(
-                  backgroundColor: Colors.amber.withAlpha(20),
-                  child: Icon(Icons.currency_rupee_rounded, color: Colors.amber[800]),
-                ),
-                title: Text(
-                  '₹${pay.amount.toStringAsFixed(0)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text(
-                      'Date: ${pay.date.day}/${pay.date.month}/${pay.date.year}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                    if (pay.description.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        pay.description,
-                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
-                  ],
-                ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.payments_rounded, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '₹${pay.amount.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            if (pay.description.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF59E0B).withAlpha(isDark ? 40 : 20),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  pay.description,
+                                  style: const TextStyle(
+                                    color: Color(0xFFD97706),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          DateFormat('EEEE, d MMM yyyy').format(pay.date),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -1810,14 +2607,14 @@ IconData _getClothTypeIcon(String type) {
 Color _getClothTypeColor(String type) {
   switch (type.toLowerCase()) {
     case 'shirt':
-      return Colors.blue;
+      return const Color(0xFF3B82F6);
     case 'pant':
-      return Colors.indigo;
+      return const Color(0xFF6366F1);
     case 'saree':
-      return Colors.pink;
+      return const Color(0xFFEC4899);
     case 'others':
-      return Colors.purple;
+      return const Color(0xFF8B5CF6);
     default:
-      return Colors.teal;
+      return const Color(0xFF0D9488);
   }
 }

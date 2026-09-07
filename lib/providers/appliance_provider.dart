@@ -5,26 +5,52 @@ import '../repositories/appliance_repository.dart';
 class ApplianceProvider with ChangeNotifier {
   final ApplianceRepository _repository;
   List<Appliance> _appliances = [];
+  bool _isLoading = true;
 
   ApplianceProvider(this._repository) {
     loadAppliances();
   }
 
+  bool get isLoading => _isLoading;
   List<Appliance> get appliances => _appliances;
 
-  Future<void> loadAppliances() async {
-    _appliances = await _repository.getAppliances();
-    notifyListeners();
+  Future<void> loadAppliances({bool setLoader = true}) async {
+    if (setLoader) {
+      _isLoading = true;
+      notifyListeners();
+    }
+    try {
+      _appliances = await _repository.getAppliances();
+    } finally {
+      if (setLoader) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> addAppliance(Appliance appliance) async {
-    await _repository.saveAppliance(appliance);
-    await loadAppliances();
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _repository.saveAppliance(appliance);
+      await loadAppliances(setLoader: false);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> deleteAppliance(String id) async {
-    await _repository.deleteAppliance(id);
-    await loadAppliances();
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _repository.deleteAppliance(id);
+      await loadAppliances(setLoader: false);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<List<ServiceRecord>> getServiceRecords(String applianceId) async {
@@ -34,12 +60,24 @@ class ApplianceProvider with ChangeNotifier {
   }
 
   Future<void> addServiceRecord(ServiceRecord record) async {
-    await _repository.saveServiceRecord(record);
+    _isLoading = true;
     notifyListeners();
+    try {
+      await _repository.saveServiceRecord(record);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> deleteServiceRecord(String recordId) async {
-    await _repository.deleteServiceRecord(recordId);
+    _isLoading = true;
     notifyListeners();
+    try {
+      await _repository.deleteServiceRecord(recordId);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
