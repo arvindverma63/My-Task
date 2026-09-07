@@ -17,7 +17,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  late AnimationController _bgAnimationController;
   final _loginFormKey = GlobalKey<FormState>();
   final _registerFormKey = GlobalKey<FormState>();
 
@@ -32,6 +31,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   static const String _apiUrl = 'https://slateblue-guanaco-751834.hostingersite.com/api';
 
+  // Red & White Theme Constants
+  static const Color _crimsonPrimary = Color(0xFFDC2626);
+  static const Color _crimsonDark = Color(0xFFB91C1C);
+  static const Color _crimsonLight = Color(0xFFFEE2E2);
+  static const Color _crimsonSubtle = Color(0xFFFEF2F2);
+  static const Color _slateBg = Color(0xFFF8FAFC);
+  static const Color _slateText = Color(0xFF0F172A);
+  static const Color _slateMuted = Color(0xFF64748B);
+  static const Color _slateBorder = Color(0xFFE2E8F0);
+
   @override
   void initState() {
     super.initState();
@@ -39,17 +48,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     _tabController.addListener(() {
       setState(() {});
     });
-
-    _bgAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _bgAnimationController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     _regUsernameController.dispose();
@@ -89,10 +92,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           );
         }
       } else {
-        _showErrorSnackBar(data['error'] ?? 'Login failed. Please check credentials.');
+        _showErrorSnackBar(data['error'] ?? 'Invalid username or password.');
       }
     } catch (e) {
-      _showErrorSnackBar('Network error. Check internet connection.');
+      _showErrorSnackBar('Network error. Please verify your connection.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -124,9 +127,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful! Logging in...')),
-          );
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainDashboardScreen()),
           );
@@ -135,7 +135,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _showErrorSnackBar(data['error'] ?? 'Registration failed.');
       }
     } catch (e) {
-      _showErrorSnackBar('Network error. Check internet connection.');
+      _showErrorSnackBar('Network error. Please verify your connection.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -167,7 +167,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           );
         }
       } else {
-        _showErrorSnackBar(data['error'] ?? 'Failed to enter guest mode.');
+        _showErrorSnackBar(data['error'] ?? 'Failed to initialize guest mode.');
       }
     } catch (e) {
       _showErrorSnackBar('Network error. Check internet connection.');
@@ -219,11 +219,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           );
         }
       } else {
-        _showErrorSnackBar(data['error'] ?? 'Google Sign-In backend verification failed.');
+        _showErrorSnackBar(data['error'] ?? 'Google Sign-In verification failed.');
       }
     } catch (e) {
-      debugPrint('Google Sign-In Error: $e');
-      _showErrorSnackBar('Google Sign-In requires SHA-1 configuration on Google Console: $e');
+      _showErrorSnackBar('Google Sign-In error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -232,8 +231,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+        backgroundColor: _crimsonPrimary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -244,408 +243,350 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     required String label,
     required IconData prefixIcon,
     Widget? suffixIcon,
-    required ColorScheme colorScheme,
-    required bool isDark,
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(
-        color: colorScheme.onSurfaceVariant.withAlpha(160),
+      labelStyle: const TextStyle(
+        color: _slateMuted,
         fontWeight: FontWeight.w500,
-        fontSize: 14,
+        fontSize: 13.5,
       ),
       filled: true,
-      fillColor: isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(10),
-      prefixIcon: Icon(prefixIcon, color: colorScheme.primary.withAlpha(180), size: 20),
+      fillColor: Colors.white,
+      prefixIcon: Icon(prefixIcon, color: _crimsonPrimary.withAlpha(200), size: 19),
       suffixIcon: suffixIcon,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _slateBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(12),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _slateBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: colorScheme.primary.withAlpha(160),
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _crimsonPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: Colors.redAccent.withAlpha(100),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _crimsonPrimary.withAlpha(150)),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: Colors.redAccent,
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _crimsonPrimary, width: 1.5),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: _slateBg,
       body: Stack(
         children: [
-          // 1. Moving Mesh Gradient Background Glows
-          AnimatedBuilder(
-            animation: _bgAnimationController,
-            builder: (context, child) {
-              final val = _bgAnimationController.value;
-              return Stack(
-                children: [
-                  Positioned(
-                    top: -120 + (val * 40),
-                    left: -120 + (val * 30),
-                    child: Container(
-                      width: 320,
-                      height: 320,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.primary.withAlpha((35 + val * 15).round()),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -60 - (val * 30),
-                    right: -120 - (val * 40),
-                    child: Container(
-                      width: 350,
-                      height: 350,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF06B6D4).withAlpha((25 + val * 15).round()),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+          // Subtle Red Ambient Lighting Top
+          Positioned(
+            top: -100,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _crimsonPrimary.withAlpha(15),
+              ),
+            ),
           ),
-          // Blur filter for background elements
+          Positioned(
+            bottom: -80,
+            right: -80,
+            child: Container(
+              width: 320,
+              height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _crimsonPrimary.withAlpha(10),
+              ),
+            ),
+          ),
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
               child: const SizedBox.shrink(),
             ),
           ),
 
-          // 2. Main Content
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - 32,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 20),
-                          // Brand Logo emblem with soft glow scale transition
-                          Center(
-                            child: AnimatedBuilder(
-                              animation: _bgAnimationController,
-                              builder: (context, child) {
-                                final val = _bgAnimationController.value;
-                                return Container(
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(8),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: colorScheme.primary.withAlpha((40 + val * 20).round()),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: colorScheme.primary.withAlpha((20 + val * 15).round()),
-                                        blurRadius: 28,
-                                        spreadRadius: 2,
-                                      )
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.devices_other_rounded,
-                                    size: 40,
-                                    color: colorScheme.primary,
-                                  ),
-                                );
-                              },
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Brand Logo Header
+                      Center(
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: _crimsonPrimary,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _crimsonPrimary.withAlpha(70),
+                                blurRadius: 18,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'M',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Roboto',
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          // Sleek Gradient Title Text
-                          Center(
-                            child: ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFEC4899)],
-                              ).createShader(bounds),
-                              child: Text(
-                                'My Task Hub',
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: -1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Center(
+                        child: Text(
+                          'My Task Hub',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: _slateText,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Center(
+                        child: Text(
+                          'Household Staff, Ironing & Appliance Management',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: _slateMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Expiration / Deleted User Warning Banner
+                      if (widget.expirationMessage != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _crimsonSubtle,
+                            border: Border.all(color: _crimsonPrimary.withAlpha(80)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: _crimsonPrimary, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  widget.expirationMessage!,
+                                  style: const TextStyle(
+                                    color: _crimsonDark,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12.5,
+                                    height: 1.35,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          Center(
-                            child: Text(
-                              'Track helpers, ironing logs & appliance repairs',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withAlpha(200),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
+                        ),
+                      ],
 
-                          if (widget.expirationMessage != null)
+                      // White Form Container Card
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: _slateBorder),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 20,
+                              offset: Offset(0, 6),
+                            )
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(22),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_isLoading) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: const LinearProgressIndicator(
+                                  minHeight: 3,
+                                  backgroundColor: _crimsonLight,
+                                  valueColor: AlwaysStoppedAnimation<Color>(_crimsonPrimary),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+
+                            // Red & White Capsule Tab Bar
                             Container(
-                              margin: const EdgeInsets.only(bottom: 24),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              height: 42,
+                              padding: const EdgeInsets.all(3),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withAlpha(25),
-                                border: Border.all(color: Colors.orange.withAlpha(76)),
-                                borderRadius: BorderRadius.circular(18),
+                                color: _slateBg,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: _slateBorder),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 22),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      widget.expirationMessage!,
-                                      style: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          // 3. Premium Glassmorphic Form Card with Shadows
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.white.withAlpha(10) : Colors.white.withAlpha(150),
-                                  borderRadius: BorderRadius.circular(28),
-                                  border: Border.all(
-                                    color: isDark ? Colors.white.withAlpha(25) : Colors.black.withAlpha(15),
-                                    width: 1.2,
-                                  ),
+                              child: TabBar(
+                                controller: _tabController,
+                                indicator: BoxDecoration(
+                                  color: _crimsonPrimary,
+                                  borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withAlpha(isDark ? 80 : 20),
-                                      blurRadius: 40,
-                                      spreadRadius: 4,
+                                      color: _crimsonPrimary.withAlpha(60),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
                                     )
                                   ],
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (_isLoading) ...[
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            minHeight: 3,
-                                            backgroundColor: Colors.transparent,
-                                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      // Custom sliding toggle capsule tab bar
-                                      Container(
-                                        height: 50,
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: isDark ? Colors.black38 : Colors.black.withAlpha(12),
-                                          borderRadius: BorderRadius.circular(99),
-                                        ),
-                                        child: TabBar(
-                                          controller: _tabController,
-                                          indicator: BoxDecoration(
-                                            color: colorScheme.primary,
-                                            borderRadius: BorderRadius.circular(99),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: colorScheme.primary.withAlpha(120),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 2),
-                                              )
-                                            ],
-                                          ),
-                                          labelColor: Colors.white,
-                                          unselectedLabelColor: colorScheme.onSurfaceVariant.withAlpha(180),
-                                          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                          indicatorSize: TabBarIndicatorSize.tab,
-                                          dividerColor: Colors.transparent,
-                                          tabs: const [
-                                            Tab(text: 'Sign In'),
-                                            Tab(text: 'Sign Up'),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 28),
-                                      SizedBox(
-                                        height: 280, // slightly taller for elegant inputs spacing
-                                        child: TabBarView(
-                                          controller: _tabController,
-                                          children: [
-                                            _buildLoginForm(colorScheme, isDark),
-                                            _buildRegisterForm(colorScheme, isDark),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                labelColor: Colors.white,
+                                unselectedLabelColor: _slateMuted,
+                                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, fontFamily: 'Roboto'),
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                dividerColor: Colors.transparent,
+                                tabs: const [
+                                  Tab(text: 'Sign In'),
+                                  Tab(text: 'Sign Up'),
+                                ],
                               ),
-                            ),
-                          ),
-
-                          const Spacer(),
-                          const SizedBox(height: 24),
-
-                          // 4. Third party options (Google & Guest)
-                          if (!_isLoading) ...[
-                            Row(
-                              children: [
-                                Expanded(child: Divider(color: colorScheme.onSurfaceVariant.withAlpha(40))),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    'OR CONTINUE WITH',
-                                    style: TextStyle(
-                                      color: colorScheme.onSurfaceVariant.withAlpha(120),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(child: Divider(color: colorScheme.onSurfaceVariant.withAlpha(40))),
-                              ],
                             ),
                             const SizedBox(height: 20),
-                            // Google Login Button
-                            ElevatedButton(
-                              onPressed: _handleGoogleSignIn,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                foregroundColor: colorScheme.onSurface,
-                                elevation: 2,
-                                shadowColor: Colors.black12,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  side: BorderSide(
-                                    color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10),
-                                    width: 1.0,
-                                  ),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+
+                            SizedBox(
+                              height: 230,
+                              child: TabBarView(
+                                controller: _tabController,
                                 children: [
-                                  GoogleLogoIcon(size: 20),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'Sign in with Google',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      letterSpacing: 0.1,
-                                    ),
-                                  ),
+                                  _buildLoginForm(),
+                                  _buildRegisterForm(),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            // Guest Login Button
-                            OutlinedButton(
-                              onPressed: _handleGuestMode,
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                side: BorderSide(
-                                  color: colorScheme.primary.withAlpha(102),
-                                  width: 1.2,
-                                ),
-                                backgroundColor: isDark ? Colors.white.withAlpha(3) : Colors.black.withAlpha(3),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.person_outline_rounded, color: colorScheme.primary, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Continue as Guest',
-                                    style: TextStyle(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      letterSpacing: 0.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Center(
-                              child: Text(
-                                '30 days guest limit. Conversions supported later.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant.withAlpha(140),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ] else
-                            const Center(child: CircularProgressIndicator()),
-                          const SizedBox(height: 16),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      // Third-Party Options
+                      if (!_isLoading) ...[
+                        Row(
+                          children: [
+                            const Expanded(child: Divider(color: _slateBorder)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              child: Text(
+                                'OR CONTINUE WITH',
+                                style: TextStyle(
+                                  color: _slateMuted.withAlpha(160),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider(color: _slateBorder)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Google Sign In
+                        ElevatedButton(
+                          onPressed: _handleGoogleSignIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: _slateText,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: _slateBorder),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GoogleLogoIcon(size: 18),
+                              SizedBox(width: 10),
+                              Text(
+                                'Sign in with Google',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Guest Mode (30-Day Trial)
+                        OutlinedButton(
+                          onPressed: _handleGuestMode,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            side: const BorderSide(color: _crimsonPrimary, width: 1.2),
+                            backgroundColor: _crimsonSubtle,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person_outline_rounded, color: _crimsonPrimary, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Continue as Guest (30-Day Free Trial)',
+                                style: TextStyle(
+                                  color: _crimsonPrimary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: Text(
+                            'Guest accounts can convert to lifetime premium anytime.',
+                            style: TextStyle(
+                              color: _slateMuted,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],
@@ -653,7 +594,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLoginForm(ColorScheme colorScheme, bool isDark) {
+  Widget _buildLoginForm() {
     return Form(
       key: _loginFormKey,
       child: Column(
@@ -664,8 +605,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             decoration: _buildInputDecoration(
               label: 'Username',
               prefixIcon: Icons.person_outline_rounded,
-              colorScheme: colorScheme,
-              isDark: isDark,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -674,7 +613,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -684,14 +623,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  size: 20,
+                  size: 19,
+                  color: _slateMuted,
                 ),
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
               ),
-              colorScheme: colorScheme,
-              isDark: isDark,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -701,52 +639,37 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             },
           ),
           const Spacer(),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
-                colors: [colorScheme.primary, colorScheme.primary.withAlpha(200)],
+          ElevatedButton(
+            onPressed: _isLoading ? null : _handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _crimsonPrimary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withAlpha(80),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                )
-              ],
             ),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Sign In',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-            ),
+                  )
+                : const Text(
+                    'Sign In',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRegisterForm(ColorScheme colorScheme, bool isDark) {
+  Widget _buildRegisterForm() {
     return Form(
       key: _registerFormKey,
       child: Column(
@@ -755,50 +678,44 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           TextFormField(
             controller: _regUsernameController,
             decoration: _buildInputDecoration(
-              label: 'Username',
-              prefixIcon: Icons.person_outline_rounded,
-              colorScheme: colorScheme,
-              isDark: isDark,
+              label: 'New Username',
+              prefixIcon: Icons.person_add_outlined,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter username';
               }
-              if (value.trim().length < 4) {
-                return 'Username must be at least 4 characters';
+              if (value.trim().length < 3) {
+                return 'Username must be at least 3 characters';
               }
               return null;
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _regPasswordController,
             obscureText: _obscurePassword,
             decoration: _buildInputDecoration(
-              label: 'Password',
+              label: 'New Password',
               prefixIcon: Icons.lock_outline_rounded,
-              colorScheme: colorScheme,
-              isDark: isDark,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter password';
               }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
+              if (value.length < 4) {
+                return 'Password must be at least 4 characters';
               }
               return null;
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _regConfirmPasswordController,
             obscureText: _obscurePassword,
             decoration: _buildInputDecoration(
               label: 'Confirm Password',
-              prefixIcon: Icons.lock_clock_outlined,
-              colorScheme: colorScheme,
-              isDark: isDark,
+              prefixIcon: Icons.lock_reset_outlined,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -811,45 +728,30 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             },
           ),
           const Spacer(),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
-                colors: [colorScheme.primary, colorScheme.primary.withAlpha(200)],
+          ElevatedButton(
+            onPressed: _isLoading ? null : _handleRegister,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _crimsonPrimary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withAlpha(80),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                )
-              ],
             ),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleRegister,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Create Account',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-            ),
+                  )
+                : const Text(
+                    'Create Account',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white),
+                  ),
           ),
         ],
       ),
@@ -880,18 +782,15 @@ class _GoogleLogoPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = w * 0.22;
 
-    // Draw Google Arch segments
-    // Red segment: top
     paint.color = const Color(0xFFEA4335);
     canvas.drawArc(
       Rect.fromLTWH(0, 0, w, h),
-      -2.4, // start angle
-      1.2,  // sweep angle
+      -2.4,
+      1.2,
       false,
       paint,
     );
 
-    // Yellow segment: left-bottom
     paint.color = const Color(0xFFFBBC05);
     canvas.drawArc(
       Rect.fromLTWH(0, 0, w, h),
@@ -901,7 +800,6 @@ class _GoogleLogoPainter extends CustomPainter {
       paint,
     );
 
-    // Green segment: bottom
     paint.color = const Color(0xFF34A853);
     canvas.drawArc(
       Rect.fromLTWH(0, 0, w, h),
@@ -911,7 +809,6 @@ class _GoogleLogoPainter extends CustomPainter {
       paint,
     );
 
-    // Blue segment: right-top and crossbar
     paint.color = const Color(0xFF4285F4);
     canvas.drawArc(
       Rect.fromLTWH(0, 0, w, h),
@@ -921,7 +818,6 @@ class _GoogleLogoPainter extends CustomPainter {
       paint,
     );
 
-    // Crossbar
     final Paint fillPaint = Paint()
       ..color = const Color(0xFF4285F4)
       ..style = PaintingStyle.fill;

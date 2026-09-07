@@ -17,6 +17,17 @@ class ApiEmployeeRepository implements EmployeeRepository {
     return headers;
   }
 
+  void _checkResponse(http.Response response) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      try {
+        final err = json.decode(response.body);
+        SessionManager().handleUnauthorized(err['error'] ?? 'Your session is no longer active. Please sign in.');
+      } catch (_) {
+        SessionManager().handleUnauthorized('Your session has ended or this account was removed.');
+      }
+    }
+  }
+
   Future<String?> _uploadIfLocal(String? path) async {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('uploads/') || path.startsWith('http')) return path;
@@ -34,6 +45,8 @@ class ApiEmployeeRepository implements EmployeeRepository {
         final resBody = await response.stream.bytesToString();
         final data = json.decode(resBody);
         return data['path'];
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        SessionManager().handleUnauthorized('Session expired or account removed.');
       }
     } catch (e) {
       // Log error
@@ -49,6 +62,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/employees'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => Employee.fromMap(item)).toList();
@@ -90,6 +104,8 @@ class ApiEmployeeRepository implements EmployeeRepository {
               body: json.encode(updated.toMap()),
             );
 
+      _checkResponse(response);
+
       if (response.statusCode != 200 && response.statusCode != 201) {
         try {
           final errData = json.decode(response.body);
@@ -112,10 +128,11 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteEmployee(String id) async {
     try {
       final headers = await _getHeaders();
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/api/employees/$id'),
         headers: headers,
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -129,6 +146,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/attendance?employeeId=$employeeId'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => AttendanceEntry.fromMap(item)).toList();
@@ -148,14 +166,16 @@ class ApiEmployeeRepository implements EmployeeRepository {
         headers: headers,
         body: json.encode(entry.toMap()),
       );
+      _checkResponse(response);
       if (response.statusCode != 200 && response.statusCode != 201) {
         // If save failed (e.g., duplicate key in DB), delete existing and retry
         await deleteAttendance(entry.employeeId, entry.id);
-        await http.post(
+        final retryRes = await http.post(
           Uri.parse('$_baseUrl/api/attendance'),
           headers: headers,
           body: json.encode(entry.toMap()),
         );
+        _checkResponse(retryRes);
       }
     } catch (e) {
       // Log error
@@ -166,18 +186,18 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> updateAttendance(AttendanceEntry entry) async {
     try {
       final headers = await _getHeaders();
-      // First delete existing record to avoid MySQL duplicate key 500 error
-      await http.delete(
+      final delRes = await http.delete(
         Uri.parse('$_baseUrl/api/attendance/${entry.id}'),
         headers: headers,
       );
-      await http.post(
+      _checkResponse(delRes);
+      final postRes = await http.post(
         Uri.parse('$_baseUrl/api/attendance'),
         headers: headers,
         body: json.encode(entry.toMap()),
       );
+      _checkResponse(postRes);
     } catch (e) {
-      // Fallback to saveAttendance
       await saveAttendance(entry);
     }
   }
@@ -186,10 +206,11 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteAttendance(String employeeId, String entryId) async {
     try {
       final headers = await _getHeaders();
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/api/attendance/$entryId'),
         headers: headers,
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -203,6 +224,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/ironing-workers'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => IroningWorker.fromMap(item)).toList();
@@ -217,11 +239,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningWorker(IroningWorker worker) async {
     try {
       final headers = await _getHeaders();
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/api/ironing-workers'),
         headers: headers,
         body: json.encode(worker.toMap()),
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -231,10 +254,11 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteIroningWorker(String id) async {
     try {
       final headers = await _getHeaders();
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/api/ironing-workers/$id'),
         headers: headers,
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -248,6 +272,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/ironing-workers/$workerId/rates'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => IronRate.fromMap(item)).toList();
@@ -262,11 +287,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIronRate(String workerId, IronRate rate) async {
     try {
       final headers = await _getHeaders();
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/api/ironing-workers/$workerId/rates'),
         headers: headers,
         body: json.encode(rate.toMap()),
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -285,6 +311,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/ironing-records?workerId=$workerId'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => IroningRecord.fromMap(item)).toList();
@@ -299,11 +326,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningRecord(String workerId, IroningRecord record) async {
     try {
       final headers = await _getHeaders();
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/api/ironing-records'),
         headers: headers,
         body: json.encode(record.toMap()),
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }
@@ -322,6 +350,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         Uri.parse('$_baseUrl/api/ironing-payments?workerId=$workerId'),
         headers: headers,
       );
+      _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
         return list.map((item) => IroningPayment.fromMap(item)).toList();
@@ -336,11 +365,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningPayment(String workerId, IroningPayment payment) async {
     try {
       final headers = await _getHeaders();
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/api/ironing-payments'),
         headers: headers,
         body: json.encode(payment.toMap()),
       );
+      _checkResponse(response);
     } catch (e) {
       // Log error
     }

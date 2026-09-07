@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/auth_screen.dart';
 
 class SessionManager {
   static const String _keyUserId = 'user_id';
@@ -6,6 +8,8 @@ class SessionManager {
   static const String _keyUserType = 'user_type';
   static const String _keyExpiresAt = 'expires_at';
   static const String _keyProfilePic = 'profile_pic';
+
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   static final SessionManager _instance = SessionManager._internal();
   factory SessionManager() => _instance;
@@ -66,6 +70,30 @@ class SessionManager {
     await prefs.remove(_keyUserType);
     await prefs.remove(_keyExpiresAt);
     await prefs.remove(_keyProfilePic);
+  }
+
+  bool _isRedirecting = false;
+
+  /// Automatically clears invalid session and redirects to AuthScreen
+  Future<void> handleUnauthorized([String? message]) async {
+    if (_isRedirecting) return;
+    _isRedirecting = true;
+    await clearSession();
+
+    final nav = navigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => AuthScreen(
+            expirationMessage: message ?? 'Your session has ended or this account was removed. Please sign in.',
+          ),
+        ),
+        (route) => false,
+      );
+    }
+    Future.delayed(const Duration(seconds: 2), () {
+      _isRedirecting = false;
+    });
   }
 
   Future<bool> isExpired() async {

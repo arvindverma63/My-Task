@@ -152,6 +152,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'My Task',
             debugShowCheckedModeBanner: false,
+            navigatorKey: SessionManager.navigatorKey,
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: themeProvider.themeMode,
