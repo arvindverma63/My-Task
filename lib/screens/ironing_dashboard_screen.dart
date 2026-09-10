@@ -30,12 +30,12 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
 
   List<Color> _getAvatarGradient(String name) {
     final palettes = [
-      [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
+      [const Color(0xFF0D9488), const Color(0xFF14B8A6)],
       [const Color(0xFF0EA5E9), const Color(0xFF0284C7)],
       [const Color(0xFF10B981), const Color(0xFF059669)],
-      [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
       [const Color(0xFFF59E0B), const Color(0xFFD97706)],
-      [const Color(0xFFEC4899), const Color(0xFFDB2777)],
+      [const Color(0xFFE11D48), const Color(0xFFFB7185)],
+      [const Color(0xFF2563EB), const Color(0xFF3B82F6)],
     ];
     final hash = name.codeUnits.fold(0, (acc, c) => acc + c);
     return palettes[hash % palettes.length];
@@ -75,7 +75,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        prefixIcon: Icon(prefixIcon, color: const Color(0xFF4F46E5), size: 18),
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF0D9488), size: 18),
         prefixText: prefixText,
         filled: true,
         fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
@@ -90,7 +90,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.8),
+          borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.8),
         ),
       ),
     );
@@ -116,25 +116,21 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
       bottom: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isDark
-                ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-                : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                ? [const Color(0xFF134E4A), const Color(0xFF1E293B)]
+                : [const Color(0xFF0F766E), const Color(0xFF0D9488)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE),
-            width: 1,
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 30 : 6),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: const Color(0xFF0D9488).withAlpha(isDark ? 30 : 25),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -144,19 +140,8 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: Colors.white.withAlpha(isDark ? 25 : 35),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF4F46E5).withAlpha(80),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: const Icon(Icons.iron_rounded, color: Colors.white, size: 20),
             ),
@@ -167,29 +152,29 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                 children: [
                   Row(
                     children: [
-                      Flexible(
+                      const Flexible(
                         child: Text(
                           'Ironing Registry',
                           style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4F46E5).withAlpha(isDark ? 60 : 30),
+                          color: Colors.white.withAlpha(isDark ? 30 : 40),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '${workers.length} ${workers.length == 1 ? "worker" : "workers"}',
                           style: const TextStyle(
-                            color: Color(0xFF4F46E5),
+                            color: Colors.white,
                             fontSize: 9.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -199,10 +184,11 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Clothes count, rates & payments',
+                    'Clothes count, rates & payments (इस्त्री का हिसाब)',
                     style: TextStyle(
                       fontSize: 10.5,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withAlpha(220),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -213,30 +199,19 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
             const SizedBox(width: 8),
             Material(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               child: InkWell(
                 onTap: () => _showAddWorkerDialog(context),
-                borderRadius: BorderRadius.circular(8),
-                child: Ink(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withAlpha(isDark ? 30 : 40),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: Colors.white.withAlpha(50),
+                      color: Colors.white.withAlpha(60),
                       width: 0.8,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF4F46E5).withAlpha(80),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -249,7 +224,6 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 11.5,
-                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -277,7 +251,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       child: LinearProgressIndicator(
                         minHeight: 2.5,
                         backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                       ),
                     ),
                   ),
@@ -289,7 +263,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                             children: [
                               const CircularProgressIndicator(
                                 strokeWidth: 2.8,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                               ),
                               const SizedBox(height: 14),
                               Text(
@@ -329,7 +303,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                 const SizedBox(height: 16),
                                 FilledButton.icon(
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFF4F46E5),
+                                    backgroundColor: const Color(0xFF0D9488),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                                   ),
@@ -355,13 +329,13 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       child: LinearProgressIndicator(
                         minHeight: 2.5,
                         backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                       ),
                     ),
                   ),
                 Expanded(
                   child: RefreshIndicator(
-                    color: const Color(0xFF4F46E5),
+                    color: const Color(0xFF0D9488),
                     onRefresh: () => context.read<EmployeeProvider>().refreshData(),
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -379,10 +353,10 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                         Container(
                           height: 42,
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0FDFA),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE0E7FF),
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFCCFBF1),
                               width: 1,
                             ),
                           ),
@@ -390,11 +364,11 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                             controller: _tabController,
                             onTap: (idx) => setState(() {}),
                             indicator: BoxDecoration(
-                              color: const Color(0xFF4F46E5),
+                              color: const Color(0xFF0D9488),
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF4F46E5).withAlpha(80),
+                                  color: const Color(0xFF0D9488).withAlpha(70),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -547,119 +521,157 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
 
   void _showWorkerSelectionSheet(BuildContext context, List<IroningWorker> workers, IroningWorker selected) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    String query = '';
+    final ctrl = TextEditingController();
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = workers.where((w) {
+              if (query.isEmpty) return true;
+              final q = query.toLowerCase();
+              return w.name.toLowerCase().contains(q) || w.contact.contains(q);
+            }).toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Select Ironing Worker',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      style: IconButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                        padding: const EdgeInsets.all(6),
-                        minimumSize: Size.zero,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Select Ironing Worker',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          style: IconButton.styleFrom(
+                            backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                            padding: const EdgeInsets.all(6),
+                            minimumSize: Size.zero,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Search box
+                    TextField(
+                      controller: ctrl,
+                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                      decoration: InputDecoration(
+                        hintText: 'Search worker by name or phone...',
+                        prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                        suffixIcon: query.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 16),
+                                onPressed: () {
+                                  ctrl.clear();
+                                  setModalState(() => query = '');
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onChanged: (val) => setModalState(() => query = val),
+                    ),
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final w = filtered[index];
+                          final isSelected = w.id == selected.id;
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (isDark ? const Color(0x280D9488) : const Color(0xFFF0FDFA))
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF0D9488) : Colors.transparent,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: ListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: _getAvatarGradient(w.name)),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                w.name,
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              subtitle: w.contact.isNotEmpty
+                                  ? Text(w.contact, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)))
+                                  : null,
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0D9488), size: 20)
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedWorkerId = w.id;
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: workers.length,
-                    itemBuilder: (context, index) {
-                      final w = workers[index];
-                      final isSelected = w.id == selected.id;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 3),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? (isDark ? const Color(0x284F46E5) : const Color(0xFFEEF2FF))
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? const Color(0xFF4F46E5) : Colors.transparent,
-                            width: 1.2,
-                          ),
-                        ),
-                        child: ListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                          leading: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: _getAvatarGradient(w.name)),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            w.name,
-                            style: TextStyle(
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                              fontSize: 13.5,
-                            ),
-                          ),
-                          subtitle: w.contact.isNotEmpty
-                              ? Text(w.contact, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)))
-                              : null,
-                          trailing: isSelected
-                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF4F46E5), size: 20)
-                              : null,
-                          onTap: () {
-                            setState(() {
-                              _selectedWorkerId = w.id;
-                            });
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -799,7 +811,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                           ),
                         ),
                         Text(
-                          balance >= 0 ? 'Due to dhobi' : 'Advance surplus',
+                          balance >= 0 ? 'Due to helper' : 'Advance surplus',
                           style: TextStyle(
                             color: balance >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626),
                             fontSize: 10,
@@ -835,7 +847,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       value: settledPercentage,
                       minHeight: 5,
                       backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
                     ),
                   ),
                 ],
@@ -853,9 +865,10 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
       builder: (context, snapshot) {
         final ratesList = snapshot.data ?? [];
         final Map<String, double> ratesMap = {
-          'Shirt': 5.0,
-          'Pant': 5.0,
-          'Saree': 10.0,
+          'Small Clothes': 4.0,
+          'Medium Clothes': 5.0,
+          'Large Clothes': 7.0,
+          'XL Clothes': 10.0,
           'Others': 5.0,
         };
         for (final rate in ratesList) {
@@ -892,9 +905,9 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       child: Row(
                         children: [
-                          Icon(Icons.edit_rounded, size: 12, color: Color(0xFF4F46E5)),
+                          Icon(Icons.edit_rounded, size: 12, color: Color(0xFF0D9488)),
                           SizedBox(width: 4),
-                          Text('Edit Rates', style: TextStyle(fontSize: 11.5, color: Color(0xFF4F46E5), fontWeight: FontWeight.bold)),
+                          Text('Edit Rates', style: TextStyle(fontSize: 11.5, color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -1030,16 +1043,16 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: isDark
-                              ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-                              : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                              ? [const Color(0xFF134E4A), const Color(0xFF0F766E)]
+                              : [const Color(0xFFF0FDFA), const Color(0xFFCCFBF1)],
                         ),
-                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE))),
+                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF0F766E) : const Color(0xFF99F6E4))),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: const Color(0xFF4F46E5),
+                            backgroundColor: const Color(0xFF0D9488),
                             child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
@@ -1049,7 +1062,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                                color: isDark ? Colors.white : const Color(0xFF134E4A),
                               ),
                             ),
                           ),
@@ -1099,7 +1112,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                           const SizedBox(width: 8),
                           FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF4F46E5),
+                              backgroundColor: const Color(0xFF0D9488),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1234,16 +1247,16 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: isDark
-                                ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-                                : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                                ? [const Color(0xFF134E4A), const Color(0xFF0F766E)]
+                                : [const Color(0xFFF0FDFA), const Color(0xFFCCFBF1)],
                           ),
-                          border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE))),
+                          border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF0F766E) : const Color(0xFF99F6E4))),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: const Color(0xFF4F46E5),
+                              backgroundColor: const Color(0xFF0D9488),
                               child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
                             ),
                             const SizedBox(width: 12),
@@ -1253,7 +1266,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
-                                  color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                                  color: isDark ? Colors.white : const Color(0xFF134E4A),
                                 ),
                               ),
                             ),
@@ -1291,8 +1304,8 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                 icon: const Icon(Icons.add_rounded, size: 16),
                                 label: const Text('Add Custom Cloth Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF4F46E5),
-                                  side: const BorderSide(color: Color(0xFF4F46E5)),
+                                  foregroundColor: const Color(0xFF0D9488),
+                                  side: const BorderSide(color: Color(0xFF0D9488)),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 ),
@@ -1308,7 +1321,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF4F46E5))),
+                                    const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0D9488))),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
@@ -1356,7 +1369,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                                         const SizedBox(width: 6),
                                         FilledButton(
                                           style: FilledButton.styleFrom(
-                                            backgroundColor: const Color(0xFF4F46E5),
+                                            backgroundColor: const Color(0xFF0D9488),
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                           ),
@@ -1393,7 +1406,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                             const SizedBox(width: 8),
                             FilledButton(
                               style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF4F46E5),
+                                backgroundColor: const Color(0xFF0D9488),
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
@@ -1785,15 +1798,17 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
     if (mounted) {
       setState(() {
         _counts = {
-          'Shirt': 0,
-          'Pant': 0,
-          'Saree': 0,
+          'Small Clothes': 0,
+          'Medium Clothes': 0,
+          'Large Clothes': 0,
+          'XL Clothes': 0,
           'Others': 0,
         };
         _rates = {
-          'Shirt': 5.0,
-          'Pant': 5.0,
-          'Saree': 10.0,
+          'Small Clothes': 4.0,
+          'Medium Clothes': 5.0,
+          'Large Clothes': 7.0,
+          'XL Clothes': 10.0,
           'Others': 5.0,
         };
         for (final rate in list) {
@@ -1947,8 +1962,8 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
                       icon: const Icon(Icons.add_rounded, size: 16),
                       label: const Text('Add Custom Cloth Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF4F46E5),
-                        side: const BorderSide(color: Color(0xFF4F46E5)),
+                        foregroundColor: const Color(0xFF0D9488),
+                        side: const BorderSide(color: Color(0xFF0D9488)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       ),
@@ -1964,7 +1979,7 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF4F46E5))),
+                          const Text('New Cloth Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0D9488))),
                           const SizedBox(height: 8),
                           Row(
                             children: [
@@ -2015,7 +2030,7 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
                               const SizedBox(width: 6),
                               FilledButton(
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F46E5),
+                                  backgroundColor: const Color(0xFF0D9488),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
@@ -2233,7 +2248,7 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
             children: [
               IconButton(
                 style: IconButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
+                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(32, 32),
                 ),
@@ -2590,31 +2605,45 @@ class _PaymentLogsTab extends StatelessWidget {
 }
 
 IconData _getClothTypeIcon(String type) {
-  switch (type.toLowerCase()) {
-    case 'shirt':
-      return Icons.checkroom_rounded;
-    case 'pant':
-      return Icons.dry_cleaning_rounded;
-    case 'saree':
-      return Icons.texture_rounded;
-    case 'others':
-      return Icons.local_laundry_service_rounded;
-    default:
-      return Icons.shopping_bag_rounded;
+  final lower = type.toLowerCase();
+  if (lower.contains('small')) {
+    return Icons.style_rounded;
+  } else if (lower.contains('medium')) {
+    return Icons.checkroom_rounded;
+  } else if (lower.contains('large') && !lower.contains('extra') && !lower.contains('xl')) {
+    return Icons.dry_cleaning_rounded;
+  } else if (lower.contains('xl') || lower.contains('extra')) {
+    return Icons.layers_rounded;
+  } else if (lower.contains('shirt')) {
+    return Icons.checkroom_rounded;
+  } else if (lower.contains('pant')) {
+    return Icons.dry_cleaning_rounded;
+  } else if (lower.contains('saree')) {
+    return Icons.texture_rounded;
+  } else if (lower.contains('others')) {
+    return Icons.local_laundry_service_rounded;
   }
+  return Icons.shopping_bag_rounded;
 }
 
 Color _getClothTypeColor(String type) {
-  switch (type.toLowerCase()) {
-    case 'shirt':
-      return const Color(0xFF3B82F6);
-    case 'pant':
-      return const Color(0xFF6366F1);
-    case 'saree':
-      return const Color(0xFFEC4899);
-    case 'others':
-      return const Color(0xFF8B5CF6);
-    default:
-      return const Color(0xFF0D9488);
+  final lower = type.toLowerCase();
+  if (lower.contains('small')) {
+    return const Color(0xFF0D9488); // Teal
+  } else if (lower.contains('medium')) {
+    return const Color(0xFF0284C7); // Sky Blue
+  } else if (lower.contains('large') && !lower.contains('extra') && !lower.contains('xl')) {
+    return const Color(0xFFD97706); // Warm Sunset Amber
+  } else if (lower.contains('xl') || lower.contains('extra')) {
+    return const Color(0xFFE11D48); // Rose / Coral
+  } else if (lower.contains('shirt')) {
+    return const Color(0xFF0284C7); // Sky Blue
+  } else if (lower.contains('pant')) {
+    return const Color(0xFF475569); // Slate
+  } else if (lower.contains('saree')) {
+    return const Color(0xFFDB2777); // Pink
+  } else if (lower.contains('others')) {
+    return const Color(0xFF10B981); // Emerald
   }
+  return const Color(0xFFF59E0B);
 }

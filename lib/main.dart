@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
-import 'screens/auth_screen.dart';
-import 'screens/main_dashboard_screen.dart';
+import 'screens/splash_screen.dart';
 import 'utils/session_manager.dart';
 import 'package:flutter/services.dart';
 
@@ -156,60 +155,10 @@ class MyApp extends StatelessWidget {
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: themeProvider.themeMode,
-            home: const SessionWrapper(),
+            home: const SplashScreen(),
           );
         },
       ),
-    );
-  }
-}
-
-class SessionWrapper extends StatelessWidget {
-  const SessionWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: SessionManager().getUserId(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        final userId = snapshot.data;
-        if (userId == null) {
-          return const AuthScreen();
-        }
-
-        // Check if guest account is expired
-        return FutureBuilder<bool>(
-          future: SessionManager().isExpired(),
-          builder: (context, expirySnapshot) {
-            if (expirySnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            final isExpired = expirySnapshot.data ?? false;
-            if (isExpired) {
-              // Clear session and return AuthScreen with warning
-              return FutureBuilder<void>(
-                future: SessionManager().clearSession(),
-                builder: (context, clearSnapshot) {
-                  return const AuthScreen(
-                    expirationMessage: 'Your 30-day guest period has expired. Please register to convert your account and save your logs.',
-                  );
-                },
-              );
-            }
-
-            return const MainDashboardScreen();
-          },
-        );
-      },
     );
   }
 }

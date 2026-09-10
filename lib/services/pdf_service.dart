@@ -80,7 +80,7 @@ class PdfService {
                 final list = dailyStatus[emp.id] ?? [];
                 if (list.isEmpty) {
                   return [
-                    [emp.name, 'N/A', '--:--', '--:--', '--']
+                    [emp.name, 'PRESENT (Default)', '09:00', '18:00', '--']
                   ];
                 }
                 return list.map((status) => [

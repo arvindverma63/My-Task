@@ -325,10 +325,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       await employeeProvider.addIroningWorker(worker1);
 
       // Seed specific rates for Karan Singh
-      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_shirt_rate', clothingType: 'Shirt', rate: 6.0, date: DateTime.now()));
-      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_pant_rate', clothingType: 'Pant', rate: 7.0, date: DateTime.now()));
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_small_rate', clothingType: 'Small Clothes', rate: 4.0, date: DateTime.now()));
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_large_rate', clothingType: 'Large Clothes', rate: 7.0, date: DateTime.now()));
 
-      // 3. Seed Appliances
+      // 3. Seed Appliances & Home Services
       final appliance1 = Appliance(
         id: '${pfx}_app_1',
         name: 'Daikin AC 1.5 Ton',
@@ -339,7 +339,29 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         warrantyEnd: DateTime.now().add(const Duration(days: 365)),
         createdAt: DateTime.now(),
       );
+      final service1 = Appliance(
+        id: '${pfx}_srv_1',
+        name: 'Indane Gas Cylinder',
+        type: 'Gas Cylinder Refill',
+        brand: 'IndianOil / Indane',
+        serialNumber: 'Consumer #98420194',
+        warrantyStart: DateTime.now().subtract(const Duration(days: 15)),
+        warrantyEnd: DateTime.now().add(const Duration(days: 25)),
+        createdAt: DateTime.now(),
+      );
       await applianceProvider.addAppliance(appliance1);
+      await applianceProvider.addAppliance(service1);
+
+      // Seed a refill log for Gas Cylinder
+      final gasLog = ServiceRecord(
+        id: '${pfx}_srv_log_1',
+        applianceId: service1.id,
+        serviceDate: DateTime.now().subtract(const Duration(days: 15)),
+        price: 850.0,
+        remarks: '14.2kg Domestic LPG Refill cylinder delivered',
+        createdAt: DateTime.now(),
+      );
+      await applianceProvider.addServiceRecord(gasLog);
     } catch (e) {
       debugPrint('Sample data seeding error (non-fatal): $e');
     }
@@ -352,31 +374,31 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     final List<Map<String, dynamic>> steps = [
       {
         'title': 'Welcome to My-Task! 👋',
-        'desc': 'This app is a simple diary to help you keep track of your daily house helpers, ironing records, and home appliance repairs.\n\nWe have added some example entries for you, so you can see how it works right away!',
+        'desc': 'This app is a simple diary to help you keep track of your daily house helpers, ironing records, gas cylinder refills, and appliance repairs.\n\nWe have added some example entries for you, so you can see how it works right away!',
         'icon': Icons.home_work_rounded,
         'tabIndex': 0,
       },
       {
         'title': 'Helper Attendance 📅',
-        'desc': 'Under this tab, you can mark when your maid or helper comes to work. You can check them in, note if they are late or absent, and record any cash advances or salary given.',
+        'desc': 'Under this tab, helpers are present by default. Tap the 1-tap Absent button if someone is on leave, and record cash advances or salary with on-screen reports.',
         'icon': Icons.people_alt_rounded,
         'tabIndex': 0,
       },
       {
         'title': 'Ironing Wages 👕',
-        'desc': 'Keep track of your ironing helper\'s clothes. Type in how many shirts, pants, or sarees you gave them. The app automatically calculates how much money you owe based on the price per cloth.',
+        'desc': 'Keep track of your ironing helper\'s clothes by sizes (Small, Medium, Large, XL). The app automatically calculates wages and balance payments.',
         'icon': Icons.iron_rounded,
         'tabIndex': 1,
       },
       {
-        'title': 'Appliance Repairs 🛠️',
-        'desc': 'Keep a log of your home appliances (like AC, TV, or Fridge). Write down when they were repaired, what work was done, and how much it cost.',
-        'icon': Icons.build_rounded,
+        'title': 'Services & Appliances 🛠️',
+        'desc': 'Track gas cylinder refills, drinking water cans, Wi-Fi utilities, and home appliances (AC, TV, Fridge) with warranties, refill logs, and receipts.',
+        'icon': Icons.propane_tank_rounded,
         'tabIndex': 2,
       },
       {
         'title': 'Warranties & Receipts 🛡️',
-        'desc': 'Track when the warranty period is ending for your appliances. Safe-keep serial numbers and purchase details in one place.',
+        'desc': 'Track when the warranty or renewal cycle is ending. Safe-keep consumer numbers, serial IDs, and bills in one place.',
         'icon': Icons.security_rounded,
         'tabIndex': 3,
       },
@@ -685,7 +707,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       const _NavItemData(
         icon: Icons.devices_other_outlined,
         selectedIcon: Icons.devices_other_rounded,
-        label: 'Appliances',
+        label: 'Services & Assets',
       ),
       _NavItemData(
         icon: Icons.settings_outlined,

@@ -7,6 +7,7 @@ import '../utils/session_manager.dart';
 import 'main_dashboard_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import '../widgets/app_logo.dart';
 
 class AuthScreen extends StatefulWidget {
   final String? expirationMessage;
@@ -488,56 +489,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Brand Logo Header
-                      Center(
-                        child: Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: _crimsonPrimary,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _crimsonPrimary.withAlpha(70),
-                                blurRadius: 18,
-                                offset: const Offset(0, 4),
-                              )
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'M',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'Roboto',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
                       const Center(
-                        child: Text(
-                          'My Task Hub',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: _slateText,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Center(
-                        child: Text(
-                          'Household Staff, Ironing & Appliance Management',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: _slateMuted,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        child: AppLogo(
+                          size: 76,
+                          showText: true,
+                          subtitle: 'Household Staff, Ironing & Appliance Management',
+                          heroTag: 'app_auth_logo',
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -636,10 +593,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
 
                             SizedBox(
-                              height: 230,
+                              height: 240,
                               child: TabBarView(
                                 controller: _tabController,
                                 children: [
@@ -651,7 +608,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 22),
 
                       // Third-Party Options
                       if (!_isLoading) ...[
@@ -755,6 +712,285 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  Future<void> _showForgotPasswordDialog() async {
+    final forgotUsernameController = TextEditingController(text: _usernameController.text.trim());
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    bool isAccountVerified = false;
+    String? verifiedUserId;
+    String? verifiedUsername;
+    bool isSubmitting = false;
+    bool obscureNewPass = true;
+    String? dialogError;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 10),
+              contentPadding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
+              actionsPadding: const EdgeInsets.fromLTRB(22, 0, 22, 18),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: _crimsonSubtle,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.lock_reset_rounded, color: _crimsonPrimary, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAccountVerified ? 'Create New Password' : 'Reset Password',
+                          style: const TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: _slateText,
+                          ),
+                        ),
+                        Text(
+                          isAccountVerified ? 'Step 2 of 2: Set new credentials' : 'Step 1 of 2: Find your account',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: _slateMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 380),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 6),
+                        if (dialogError != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: _crimsonSubtle,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: _crimsonPrimary.withAlpha(80)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline_rounded, size: 16, color: _crimsonPrimary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    dialogError!,
+                                    style: const TextStyle(fontSize: 12, color: _crimsonDark, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        if (!isAccountVerified) ...[
+                          const Text(
+                            'Enter your registered username to verify your account.',
+                            style: TextStyle(fontSize: 12.5, color: _slateMuted, height: 1.35),
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: forgotUsernameController,
+                            autofocus: true,
+                            decoration: _buildInputDecoration(
+                              label: 'Username',
+                              prefixIcon: Icons.person_outline_rounded,
+                            ),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter username' : null,
+                          ),
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            margin: const EdgeInsets.only(bottom: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFBBF7D0)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Account verified: @$verifiedUsername',
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextFormField(
+                            controller: newPasswordController,
+                            obscureText: obscureNewPass,
+                            autofocus: true,
+                            decoration: _buildInputDecoration(
+                              label: 'New Password',
+                              prefixIcon: Icons.lock_outline_rounded,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscureNewPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  size: 19,
+                                  color: _slateMuted,
+                                ),
+                                onPressed: () {
+                                  setDialogState(() => obscureNewPass = !obscureNewPass);
+                                },
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Please enter new password';
+                              if (v.length < 4) return 'Password must be at least 4 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: confirmPasswordController,
+                            obscureText: obscureNewPass,
+                            decoration: _buildInputDecoration(
+                              label: 'Confirm New Password',
+                              prefixIcon: Icons.lock_reset_outlined,
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Please confirm password';
+                              if (v != newPasswordController.text) return 'Passwords do not match';
+                              return null;
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: _slateMuted, fontWeight: FontWeight.w600)),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+                          setDialogState(() {
+                            isSubmitting = true;
+                            dialogError = null;
+                          });
+
+                          try {
+                            if (!isAccountVerified) {
+                              final res = await http.post(
+                                Uri.parse('$_apiUrl/forgot-password'),
+                                headers: {'Content-Type': 'application/json'},
+                                body: json.encode({'username': forgotUsernameController.text.trim()}),
+                              );
+                              final data = json.decode(res.body);
+                              if (res.statusCode == 200 && data['success'] == true) {
+                                setDialogState(() {
+                                  isAccountVerified = true;
+                                  verifiedUserId = data['userId'];
+                                  verifiedUsername = data['username'];
+                                  isSubmitting = false;
+                                });
+                              } else {
+                                setDialogState(() {
+                                  dialogError = data['error'] ?? 'User account not found.';
+                                  isSubmitting = false;
+                                });
+                              }
+                            } else {
+                              final res = await http.post(
+                                Uri.parse('$_apiUrl/reset-password'),
+                                headers: {'Content-Type': 'application/json'},
+                                body: json.encode({
+                                  'username': verifiedUsername,
+                                  'userId': verifiedUserId,
+                                  'newPassword': newPasswordController.text,
+                                }),
+                              );
+                              final data = json.decode(res.body);
+                              if (res.statusCode == 200 && data['success'] == true) {
+                                if (ctx.mounted) Navigator.of(ctx).pop();
+                                _usernameController.text = verifiedUsername ?? '';
+                                _passwordController.text = newPasswordController.text;
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Password reset successfully! You can now Sign In.'),
+                                      backgroundColor: Color(0xFF16A34A),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              } else {
+                                setDialogState(() {
+                                  dialogError = data['error'] ?? 'Failed to reset password.';
+                                  isSubmitting = false;
+                                });
+                              }
+                            }
+                          } catch (e) {
+                            setDialogState(() {
+                              dialogError = 'Connection error: $e';
+                              isSubmitting = false;
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _crimsonPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  ),
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                        )
+                      : Text(
+                          isAccountVerified ? 'Reset Password' : 'Verify Account',
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildLoginForm() {
     return Form(
       key: _loginFormKey,
@@ -774,7 +1010,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -799,14 +1035,33 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const Spacer(),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _isLoading ? null : _showForgotPasswordDialog,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(
+                  color: _crimsonPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           ElevatedButton(
             onPressed: _isLoading ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
               backgroundColor: _crimsonPrimary,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 13),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -852,7 +1107,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _regPasswordController,
             obscureText: _obscurePassword,
@@ -870,7 +1125,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _regConfirmPasswordController,
             obscureText: _obscurePassword,
@@ -888,14 +1143,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return null;
             },
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           ElevatedButton(
             onPressed: _isLoading ? null : _handleRegister,
             style: ElevatedButton.styleFrom(
               backgroundColor: _crimsonPrimary,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 13),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

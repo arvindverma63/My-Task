@@ -8,10 +8,27 @@ import 'employee_repository.dart';
 class ApiEmployeeRepository implements EmployeeRepository {
   static const String _baseUrl = 'https://slateblue-guanaco-751834.hostingersite.com';
 
+  Future<Uri> _buildUri(String path, [Map<String, String>? queryParams]) async {
+    final userId = await SessionManager().getUserId();
+    final params = <String, String>{};
+    if (queryParams != null) {
+      params.addAll(queryParams);
+    }
+    if (userId != null && userId.isNotEmpty) {
+      params['userId'] = userId;
+    }
+    final uri = Uri.parse('$_baseUrl$path');
+    if (params.isEmpty) return uri;
+    return uri.replace(queryParameters: params);
+  }
+
   Future<Map<String, String>> _getHeaders() async {
     final userId = await SessionManager().getUserId();
-    final headers = {'Content-Type': 'application/json'};
-    if (userId != null) {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (userId != null && userId.isNotEmpty) {
       headers['X-User-Id'] = userId;
     }
     return headers;
@@ -33,11 +50,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
     if (path.startsWith('uploads/') || path.startsWith('http')) return path;
 
     try {
-      final url = Uri.parse('$_baseUrl/api/upload');
-      final request = http.MultipartRequest('POST', url);
       final userId = await SessionManager().getUserId();
-      if (userId != null) {
+      final url = await _buildUri('/api/upload');
+      final request = http.MultipartRequest('POST', url);
+      if (userId != null && userId.isNotEmpty) {
         request.headers['X-User-Id'] = userId;
+        request.fields['userId'] = userId;
       }
       request.files.add(await http.MultipartFile.fromPath('file', path));
       final response = await request.send();
@@ -57,11 +75,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<Employee>> getEmployees() async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/employees'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/employees');
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -92,14 +111,18 @@ class ApiEmployeeRepository implements EmployeeRepository {
       final exists = current.any((e) => e.id == employee.id);
       final headers = await _getHeaders();
 
+      final url = exists
+          ? await _buildUri('/api/employees/${employee.id}')
+          : await _buildUri('/api/employees');
+
       final response = exists
           ? await http.put(
-              Uri.parse('$_baseUrl/api/employees/${employee.id}'),
+              url,
               headers: headers,
               body: json.encode(updated.toMap()),
             )
           : await http.post(
-              Uri.parse('$_baseUrl/api/employees'),
+              url,
               headers: headers,
               body: json.encode(updated.toMap()),
             );
@@ -128,10 +151,8 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteEmployee(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/api/employees/$id'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/employees/$id');
+      final response = await http.delete(url, headers: headers);
       _checkResponse(response);
     } catch (e) {
       // Log error
@@ -141,11 +162,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<AttendanceEntry>> getAttendance(String employeeId) async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/attendance?employeeId=$employeeId'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/attendance', {'employeeId': employeeId});
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -161,8 +183,9 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveAttendance(AttendanceEntry entry) async {
     try {
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/attendance');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/attendance'),
+        url,
         headers: headers,
         body: json.encode(entry.toMap()),
       );
@@ -171,7 +194,7 @@ class ApiEmployeeRepository implements EmployeeRepository {
         // If save failed (e.g., duplicate key in DB), delete existing and retry
         await deleteAttendance(entry.employeeId, entry.id);
         final retryRes = await http.post(
-          Uri.parse('$_baseUrl/api/attendance'),
+          url,
           headers: headers,
           body: json.encode(entry.toMap()),
         );
@@ -186,13 +209,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> updateAttendance(AttendanceEntry entry) async {
     try {
       final headers = await _getHeaders();
-      final delRes = await http.delete(
-        Uri.parse('$_baseUrl/api/attendance/${entry.id}'),
-        headers: headers,
-      );
+      final delUrl = await _buildUri('/api/attendance/${entry.id}');
+      final delRes = await http.delete(delUrl, headers: headers);
       _checkResponse(delRes);
+      final postUrl = await _buildUri('/api/attendance');
       final postRes = await http.post(
-        Uri.parse('$_baseUrl/api/attendance'),
+        postUrl,
         headers: headers,
         body: json.encode(entry.toMap()),
       );
@@ -206,10 +228,8 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteAttendance(String employeeId, String entryId) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/api/attendance/$entryId'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/attendance/$entryId');
+      final response = await http.delete(url, headers: headers);
       _checkResponse(response);
     } catch (e) {
       // Log error
@@ -219,11 +239,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<IroningWorker>> getIroningWorkers() async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/ironing-workers'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/ironing-workers');
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -239,8 +260,9 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningWorker(IroningWorker worker) async {
     try {
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/ironing-workers');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/ironing-workers'),
+        url,
         headers: headers,
         body: json.encode(worker.toMap()),
       );
@@ -254,10 +276,8 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> deleteIroningWorker(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/api/ironing-workers/$id'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/ironing-workers/$id');
+      final response = await http.delete(url, headers: headers);
       _checkResponse(response);
     } catch (e) {
       // Log error
@@ -267,11 +287,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<IronRate>> getIronRates(String workerId) async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/ironing-workers/$workerId/rates'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/ironing-workers/$workerId/rates');
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -287,8 +308,9 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIronRate(String workerId, IronRate rate) async {
     try {
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/ironing-workers/$workerId/rates');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/ironing-workers/$workerId/rates'),
+        url,
         headers: headers,
         body: json.encode(rate.toMap()),
       );
@@ -306,11 +328,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<IroningRecord>> getIroningRecords(String workerId) async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/ironing-records?workerId=$workerId'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/ironing-records', {'workerId': workerId});
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -326,8 +349,9 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningRecord(String workerId, IroningRecord record) async {
     try {
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/ironing-records');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/ironing-records'),
+        url,
         headers: headers,
         body: json.encode(record.toMap()),
       );
@@ -345,11 +369,12 @@ class ApiEmployeeRepository implements EmployeeRepository {
   @override
   Future<List<IroningPayment>> getIroningPayments(String workerId) async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/ironing-payments?workerId=$workerId'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/ironing-payments', {'workerId': workerId});
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -365,8 +390,9 @@ class ApiEmployeeRepository implements EmployeeRepository {
   Future<void> saveIroningPayment(String workerId, IroningPayment payment) async {
     try {
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/ironing-payments');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/ironing-payments'),
+        url,
         headers: headers,
         body: json.encode(payment.toMap()),
       );

@@ -7,10 +7,27 @@ import 'appliance_repository.dart';
 class ApiApplianceRepository implements ApplianceRepository {
   static const String _baseUrl = 'https://slateblue-guanaco-751834.hostingersite.com';
 
+  Future<Uri> _buildUri(String path, [Map<String, String>? queryParams]) async {
+    final userId = await SessionManager().getUserId();
+    final params = <String, String>{};
+    if (queryParams != null) {
+      params.addAll(queryParams);
+    }
+    if (userId != null && userId.isNotEmpty) {
+      params['userId'] = userId;
+    }
+    final uri = Uri.parse('$_baseUrl$path');
+    if (params.isEmpty) return uri;
+    return uri.replace(queryParameters: params);
+  }
+
   Future<Map<String, String>> _getHeaders() async {
     final userId = await SessionManager().getUserId();
-    final headers = {'Content-Type': 'application/json'};
-    if (userId != null) {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (userId != null && userId.isNotEmpty) {
       headers['X-User-Id'] = userId;
     }
     return headers;
@@ -32,11 +49,12 @@ class ApiApplianceRepository implements ApplianceRepository {
     if (path.startsWith('uploads/') || path.startsWith('http')) return path;
 
     try {
-      final url = Uri.parse('$_baseUrl/api/upload');
-      final request = http.MultipartRequest('POST', url);
       final userId = await SessionManager().getUserId();
-      if (userId != null) {
+      final url = await _buildUri('/api/upload');
+      final request = http.MultipartRequest('POST', url);
+      if (userId != null && userId.isNotEmpty) {
         request.headers['X-User-Id'] = userId;
+        request.fields['userId'] = userId;
       }
       request.files.add(await http.MultipartFile.fromPath('file', path));
       final response = await request.send();
@@ -56,11 +74,12 @@ class ApiApplianceRepository implements ApplianceRepository {
   @override
   Future<List<Appliance>> getAppliances() async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/appliances'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/appliances');
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -92,14 +111,18 @@ class ApiApplianceRepository implements ApplianceRepository {
       final exists = currentList.any((a) => a.id == appliance.id);
       final headers = await _getHeaders();
 
+      final url = exists
+          ? await _buildUri('/api/appliances/${appliance.id}')
+          : await _buildUri('/api/appliances');
+
       final response = exists
           ? await http.put(
-              Uri.parse('$_baseUrl/api/appliances/${appliance.id}'),
+              url,
               headers: headers,
               body: json.encode(updatedAppliance.toMap()),
             )
           : await http.post(
-              Uri.parse('$_baseUrl/api/appliances'),
+              url,
               headers: headers,
               body: json.encode(updatedAppliance.toMap()),
             );
@@ -114,10 +137,8 @@ class ApiApplianceRepository implements ApplianceRepository {
   Future<void> deleteAppliance(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/api/appliances/$id'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/appliances/$id');
+      final response = await http.delete(url, headers: headers);
       _checkResponse(response);
     } catch (e) {
       // Log error
@@ -127,11 +148,12 @@ class ApiApplianceRepository implements ApplianceRepository {
   @override
   Future<List<ServiceRecord>> getServiceRecords(String applianceId) async {
     try {
+      final userId = await SessionManager().getUserId();
+      if (userId == null || userId.isEmpty) return [];
+
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/service-records?applianceId=$applianceId'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/service-records', {'applianceId': applianceId});
+      final response = await http.get(url, headers: headers);
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
@@ -160,8 +182,9 @@ class ApiApplianceRepository implements ApplianceRepository {
       );
 
       final headers = await _getHeaders();
+      final url = await _buildUri('/api/service-records');
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/service-records'),
+        url,
         headers: headers,
         body: json.encode(updatedRecord.toMap()),
       );
@@ -179,10 +202,8 @@ class ApiApplianceRepository implements ApplianceRepository {
   Future<void> deleteServiceRecord(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/api/service-records/$id'),
-        headers: headers,
-      );
+      final url = await _buildUri('/api/service-records/$id');
+      final response = await http.delete(url, headers: headers);
       _checkResponse(response);
     } catch (e) {
       // Log error

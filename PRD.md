@@ -83,6 +83,7 @@ lib/
 │   ├── main_dashboard_screen.dart # Executive Bottom Nav shell, Trial banner, Dialogs
 │   ├── employee_management_screen.dart # Attendance roster, 1-tap quick buttons, calendar
 │   ├── employee_detail_screen.dart# Staff financial profile, advance dialog, history
+│   ├── employee_report_screen.dart# Executive report & analytics ledger with date & staff filters
 │   ├── ironing_dashboard_screen.dart # Laundry counter, rate cards, payments
 │   ├── maintenance_screen.dart    # Appliance assets, warranty tracker, service logs
 │   └── theme_settings_screen.dart # Profile edit, theme toggle, backup export
@@ -172,30 +173,30 @@ class IroningPayment {
 }
 ```
 
-### 3.7 Household Appliance (`Appliance`)
+### 3.7 Household Appliance & Home Service (`Appliance`)
 ```dart
 class Appliance {
   final String id;
-  final String name;            // e.g. "LG Washing Machine"
-  final String type;            // Category (e.g. "Refrigerator", "AC")
-  final String brand;           // Manufacturer (e.g. "Samsung")
-  final String serialNumber;    // Model / Serial identifier
-  final DateTime? warrantyStart;// Purchase date
-  final DateTime? warrantyEnd;  // Expiration date
-  final String? invoicePath;    // Photo receipt path
+  final String name;            // e.g. "Indane Gas Cylinder", "LG Washing Machine"
+  final String type;            // Category (e.g. "Gas Cylinder Refill", "Air Conditioner")
+  final String brand;           // Provider / Brand (e.g. "Bharat Gas", "Daikin", "Bisleri")
+  final String serialNumber;    // Consumer / Account ID or Serial identifier
+  final DateTime? warrantyStart;// Start date / Service booking date
+  final DateTime? warrantyEnd;  // Expiration / Next refill due date
+  final String? invoicePath;    // Photo receipt / booking slip path
   final DateTime createdAt;
 }
 ```
 
-### 3.8 Appliance Service Record (`ServiceRecord`)
+### 3.8 Appliance & Service Record (`ServiceRecord`)
 ```dart
 class ServiceRecord {
   final String id;
   final String applianceId;
   final DateTime serviceDate;
-  final double price;           // Cost of repair/parts (₹)
-  final String remarks;         // Technician notes
-  final String? billPath;       // Service receipt photo
+  final double price;           // Cost of refill/service/repair (₹)
+  final String remarks;         // Refill or technician notes
+  final String? billPath;       // Service/refill receipt photo
   final DateTime createdAt;
 }
 ```
@@ -218,44 +219,44 @@ class ServiceRecord {
   - Converting a guest account retains all locally created helpers, attendance, laundry, and appliance records and associates them with the permanent account ID.
 
 ### 4.2 Attendance Register & Wage Calculations
-- **1-Tap Quick Action Buttons (Bilingual & Child/Homemaker Friendly)**:
-  - Each employee card features large, tactile circular buttons:
-    - `✓` **Present (आया)** in Emerald Green (`#10B981`)
-    - `✕` **Absent (छुट्टी)** in Crimson Red (`#EF4444`)
-  - **Spring Bouncing Animation**: `Curves.easeOutBack` scale transition (`1.0 -> 1.25 -> 1.0`) with tactile `HapticFeedback.mediumImpact()`.
-  - **Smart Toggle**: Tapping the active state clears the entry.
-  - **Bilingual Status Guidance**: Displays friendly hints (e.g. `"👉 Tap ✓ or ✕ to mark"`, `"✓ Present • आया"`, `"✕ Absent • छुट्टी"`).
-- **One-Tap "All Present"**:
-  - Emerald batch action button in the calendar toolbar that marks all active helpers Present for the chosen date with celebratory feedback (`"🎉 All N helpers marked Present!"`).
+- **Default Present Architecture (Zero Friction)**:
+  - By default, all active employees are automatically marked/treated as **Present (`आया`)**. Users do not need to manually mark daily presence.
+  - Each employee card features a 1-tap **Absent (छुट्टी)** toggle button with Crimson Red styling (`#EF4444`):
+    - Tapping marks the helper as **Absent**.
+    - Tapping again clears the absence, immediately restoring them to **Default Present**.
+  - **Tactile Haptics**: `HapticFeedback.mediumImpact()` with spring bouncing animation (`Curves.easeOutBack`).
+  - **Bilingual Status Guidance**: Displays friendly hints (e.g. `"✓ Present (आया)"`, `"✕ Absent (छुट्टी)"`, `"⏰ Late"`, `"⏰ Left Early"`).
 - **Wage Calculation Engine**:
-  - **Daily Basis**: `Earned = Working Days * Daily Wage`.
-  - **Monthly Basis**: `Daily Wage Rate = Base Monthly Salary / 30.0`. `Earned = Working Days * (Base Salary / 30.0)`.
-  - **Balance**: `Pending Balance = Total Earned - Total Advances/Paid`. Positive is green ("Pending"), negative is red ("Overpaid").
-- **Attendance Offsets & Shifts**:
-  - Support for `Late Offset` (e.g., 30 mins late) and `Early Offset` (e.g., left 1 hour early) without marking helper absent.
-- **PDF Reporting**:
-  - Generates monthly attendance cards, helper wage receipts, and daily rosters via `PdfService`.
+  - **Working Days Computation**: `Working Days = Elapsed Days Since Joining (up to today/relieving) - Explicit Absent Days`.
+  - Generates monthly attendance cards, helper wage receipts, and daily rosters via `PdfService` with automatic default present status.
 
 ### 4.3 Ironing & Laundry Registry
 - **Worker Selector**: Horizontal chip selector to switch between different ironing vendors.
-- **Dynamic Rate Matrix**: Editable per-cloth rates (Shirt, Pant, Saree, Kurta, Others, Custom).
+- **Dynamic Size & Rate Matrix**: Editable size-based cloth rates (**Small Clothes**, **Medium Clothes**, **Large Clothes**, **XL Clothes**, **Others**, and custom types).
 - **Batch Clothes Counter**:
-  - Stepper controls (`+` / `-`) for each garment type.
+  - Stepper controls (`+` / `-`) for each garment size category.
   - Real-time computation of `Total Wage (₹)` based on selected rates.
 - **Financial Balance Tracking**:
   - Calculates cumulative wages from clothes logs minus total payments given.
 - **Logs Architecture**:
   - Smooth vertical scrolling without nested `TabBarView` height clipping bugs.
 
-### 4.4 Appliance Warranty & Maintenance Hub
-- **Warranty Monitor**:
-  - Automatically calculates days remaining until warranty expires:
-    - Active: Green shield badge (`"Active (142d left)"`).
-    - Expired: Red warning badge (`"Expired"`).
+### 4.4 Services & Appliances Hub
+- **Dual-Mode Registration & Classification**:
+  - **Physical Appliances**: Air Conditioners, Refrigerators, Washing Machines, TVs, Microwaves, Geysers, Chimneys.
+  - **Home Services & Utilities**: Gas Cylinder Refills (Indane, Bharat Gas, HP), Drinking Water Delivery (Bisleri, RO Cans), Water Purifier Services, Pest Control, Broadband / Wi-Fi, Electrician & Plumbing visits.
+  - **1-Tap Segmented Selector**: Seamless toggle between `🔌 Appliance` and `🛠️ Service / Utility` with dynamic presets, tailored field hints, and dedicated iconography.
+- **Category Filter Bar**:
+  - Top filter chips (`All`, `🔌 Appliances`, `🛠️ Services`) for quick sorting and viewing.
+- **Warranty & Refill Monitor**:
+  - Automatically calculates days remaining until warranty or next service renewal:
+    - Active: Green shield badge (`"Active (142d left)"` / `"Valid (25d left)"`).
+    - Expired: Red warning badge (`"Expired"` / `"Refill Due"`).
+    - On-demand: Slate/Teal badge (`"Active Service"`).
 - **Financial Analytics**:
-  - Computes total home assets, count of active warranties, and total repair expenses across all assets.
-- **Service Timeline**:
-  - Chronological service logs per appliance with technician notes, repair costs, and invoice image previews.
+  - Computes total home assets/services, count of active warranties/validities, and total repair/refill expenses across all items.
+- **Timeline & Receipt Storage**:
+  - Chronological service logs per item with refill notes, service costs, and receipt image previews.
 
 ### 4.5 Navigation Shell & Mobile Polish
 - **Custom Executive Bottom Navigation Bar**:

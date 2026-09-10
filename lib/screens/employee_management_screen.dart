@@ -7,8 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/employee_provider.dart';
 import '../models/employee_model.dart';
 import 'employee_detail_screen.dart';
+import 'employee_report_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../services/pdf_service.dart';
 
 class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
@@ -22,7 +22,6 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
   String _searchQuery = '';
   DateTime _selectedDate = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
-  bool _isMarkingAll = false;
 
   @override
   void dispose() {
@@ -109,9 +108,17 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                                   visualDensity: VisualDensity.compact,
                                   padding: const EdgeInsets.all(6),
                                 ),
-                                icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                                tooltip: 'PDF Report',
-                                onPressed: () => _generateMainReport(context),
+                                icon: const Icon(Icons.analytics_rounded, size: 18),
+                                tooltip: 'Reports & Analytics',
+                                onPressed: () {
+                                  HapticFeedback.mediumImpact();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const EmployeeReportScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(width: 6),
                               IconButton.filled(
@@ -207,9 +214,20 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
       ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _generateDailyReport(context, employees),
-        icon: const Icon(Icons.description_rounded),
-        label: const Text('Daily Report'),
+        backgroundColor: const Color(0xFF059669),
+        foregroundColor: Colors.white,
+        elevation: 3,
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EmployeeReportScreen(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.analytics_rounded, size: 20),
+        label: const Text('Reports & Ledger', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ),
     );
   }
@@ -223,9 +241,8 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
           builder: (context, snapshot) {
             final statuses = snapshot.data ?? {};
             final total = employees.length;
-            final present = statuses.values.where((sList) => sList.any((s) => s != AttendanceStatus.absent)).length;
-            final absent = statuses.values.where((sList) => sList.isNotEmpty && sList.every((s) => s == AttendanceStatus.absent)).length;
-            final unmarked = total - statuses.values.where((sList) => sList.isNotEmpty).length;
+            final absent = statuses.values.where((sList) => sList.isNotEmpty && sList.any((s) => s == AttendanceStatus.absent)).length;
+            final present = total - absent;
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
@@ -244,8 +261,8 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                   Expanded(
                     child: _buildGradientSummaryCard(
                       context,
-                      title: 'Absent / Unmarked',
-                      value: '${absent + unmarked}',
+                      title: 'Absent Today',
+                      value: '$absent',
                       icon: Icons.cancel_rounded,
                       colors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
                     ),
@@ -380,7 +397,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'Tap ✓ for Present, ✕ for Absent',
+                      'All helpers Present by default • Tap ✕ to mark Absent (छुट्टी)',
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant.withAlpha(160),
                         fontSize: 10.5,
@@ -389,27 +406,30 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                   ],
                 ),
               ),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 1,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0x2810B981) : const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? const Color(0x5510B981) : const Color(0x4410B981),
+                    width: 0.9,
+                  ),
                 ),
-                onPressed: (employees.isEmpty || _isMarkingAll) ? null : () => _markAllPresent(context, employees),
-                icon: _isMarkingAll
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.done_all_rounded, size: 15),
-                label: Text(
-                  _isMarkingAll ? 'Marking...' : 'All Present',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981), size: 13),
+                    SizedBox(width: 4),
+                    Text(
+                      'Auto Present',
+                      style: TextStyle(
+                        color: Color(0xFF059669),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -489,77 +509,8 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
     return statuses;
   }
 
-  Future<void> _generateMainReport(BuildContext context) async {
-    final provider = context.read<EmployeeProvider>();
-    await PdfService.generateEmployeeReport(provider.employees, {});
-  }
 
-  Future<void> _generateDailyReport(BuildContext context, List<Employee> employees) async {
-    final provider = context.read<EmployeeProvider>();
-    final Map<String, List<AttendanceEntry>> dailyStatus = {};
-    
-    for (var emp in employees) {
-      final attendance = await provider.getAttendance(emp.id);
-      dailyStatus[emp.id] = attendance.where((e) => isSameDay(e.date, _selectedDate)).toList();
-    }
 
-    await PdfService.generateAttendanceReport(_selectedDate, employees, dailyStatus);
-  }
-
-  Future<void> _markAllPresent(BuildContext context, List<Employee> employees) async {
-    if (employees.isEmpty || _isMarkingAll) return;
-    setState(() => _isMarkingAll = true);
-    HapticFeedback.heavyImpact();
-    final provider = context.read<EmployeeProvider>();
-    int count = 0;
-    try {
-      for (final emp in employees) {
-        final list = await provider.getAttendance(emp.id);
-        final existing = list.where((e) => isSameDay(e.date, _selectedDate)).firstOrNull;
-        final dateStr = DateFormat('yyyyMMdd').format(_selectedDate);
-        final entry = AttendanceEntry(
-          id: existing?.id ?? '${emp.id}_$dateStr',
-          employeeId: emp.id,
-          date: _selectedDate,
-          status: AttendanceStatus.present,
-          checkInTime: existing?.checkInTime ?? '09:00',
-          checkOutTime: existing?.checkOutTime ?? '18:00',
-          amountGiven: existing?.amountGiven ?? 0.0,
-          paymentDescription: existing?.paymentDescription,
-        );
-        await provider.markAttendance(entry);
-        count++;
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.celebration_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '🎉 All $count helpers marked Present for ${DateFormat('dd MMM').format(_selectedDate)}!',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF059669),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            duration: const Duration(milliseconds: 2000),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isMarkingAll = false);
-      }
-    }
-  }
 
   void _showAddEmployeeDialog(BuildContext context) {
     showDialog(
@@ -710,17 +661,27 @@ class _CompactEmployeeCard extends StatelessWidget {
         final attendance = snapshot.data ?? [];
         final dayEntries = attendance.where((e) => isSameDay(e.date, selectedDate)).toList();
 
-        final firstStatus = dayEntries.firstOrNull?.status;
-        final sideColor = firstStatus == null 
-            ? (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)) 
-            : _getStatusColor(firstStatus);
+        final explicitStatus = dayEntries.firstOrNull?.status;
+        final isAbsent = explicitStatus == AttendanceStatus.absent;
+        final isLate = explicitStatus == AttendanceStatus.late;
+        final isEarly = explicitStatus == AttendanceStatus.early;
+
+        final sideColor = isAbsent
+            ? const Color(0xFFEF4444)
+            : isLate
+                ? const Color(0xFFF59E0B)
+                : isEarly
+                    ? const Color(0xFF3B82F6)
+                    : const Color(0xFF10B981);
 
         final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-        final cardBorderColor = firstStatus == AttendanceStatus.present
-            ? (isDark ? const Color(0x6610B981) : const Color(0x4410B981))
-            : firstStatus == AttendanceStatus.absent
-                ? (isDark ? const Color(0x66EF4444) : const Color(0x44EF4444))
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0));
+        final cardBorderColor = isAbsent
+            ? (isDark ? const Color(0x66EF4444) : const Color(0x44EF4444))
+            : isLate
+                ? (isDark ? const Color(0x66F59E0B) : const Color(0x44F59E0B))
+                : isEarly
+                    ? (isDark ? const Color(0x663B82F6) : const Color(0x443B82F6))
+                    : (isDark ? const Color(0x4410B981) : const Color(0x2810B981));
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.5),
@@ -729,17 +690,15 @@ class _CompactEmployeeCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: cardBorderColor,
-              width: firstStatus != null ? 1.4 : 1.0,
+              width: isAbsent ? 1.4 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
                 color: isDark
                     ? Colors.black.withAlpha(75)
-                    : (firstStatus == AttendanceStatus.present
-                        ? const Color(0xFF10B981).withAlpha(18)
-                        : firstStatus == AttendanceStatus.absent
-                            ? const Color(0xFFEF4444).withAlpha(18)
-                            : Colors.black.withAlpha(9)),
+                    : (isAbsent
+                        ? const Color(0xFFEF4444).withAlpha(18)
+                        : const Color(0xFF10B981).withAlpha(12)),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -818,7 +777,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 3),
-                                _buildFriendlyStatusHint(context, firstStatus, colorScheme, dayEntries),
+                                _buildFriendlyStatusHint(context, explicitStatus, colorScheme, dayEntries),
                               ],
                             ),
                           ),
@@ -827,40 +786,23 @@ class _CompactEmployeeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Quick 1-Tap Attendance Buttons
+                // Quick Absent & Options Actions
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Present Button (Green Check)
-                      _QuickStatusButton(
-                        icon: Icons.check_rounded,
-                        label: 'P',
-                        tooltip: 'Mark Present (आया)',
-                        color: const Color(0xFF10B981),
-                        isActive: firstStatus == AttendanceStatus.present,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          if (firstStatus == AttendanceStatus.present && dayEntries.isNotEmpty) {
-                            _clearAttendance(context);
-                          } else {
-                            _markAttendanceStatus(context, AttendanceStatus.present, dayEntries.firstOrNull);
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      // Absent Button (Red Cross)
+                      // Absent Toggle Button (Red Cross)
                       _QuickStatusButton(
                         icon: Icons.close_rounded,
                         label: 'A',
-                        tooltip: 'Mark Absent (छुट्टी)',
+                        tooltip: isAbsent ? 'Marked Absent (Tap to reset to Present)' : 'Mark Absent (छुट्टी)',
                         color: const Color(0xFFEF4444),
-                        isActive: firstStatus == AttendanceStatus.absent,
+                        isActive: isAbsent,
                         onTap: () {
                           HapticFeedback.mediumImpact();
-                          if (firstStatus == AttendanceStatus.absent && dayEntries.isNotEmpty) {
+                          if (isAbsent && dayEntries.isNotEmpty) {
                             _clearAttendance(context);
                           } else {
                             _markAttendanceStatus(context, AttendanceStatus.absent, dayEntries.firstOrNull);
@@ -899,34 +841,7 @@ class _CompactEmployeeCard extends StatelessWidget {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     Widget statusWidget;
-    if (status == AttendanceStatus.present) {
-      statusWidget = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0x2810B981) : const Color(0xFFECFDF5),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isDark ? const Color(0x5510B981) : const Color(0x4410B981),
-            width: 0.8,
-          ),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 11),
-            SizedBox(width: 3.5),
-            Text(
-              'Present',
-              style: TextStyle(
-                color: Color(0xFF059669),
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (status == AttendanceStatus.absent) {
+    if (status == AttendanceStatus.absent) {
       statusWidget = Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
@@ -943,7 +858,7 @@ class _CompactEmployeeCard extends StatelessWidget {
             Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 11),
             SizedBox(width: 3.5),
             Text(
-              'Absent',
+              'Absent (छुट्टी)',
               style: TextStyle(
                 color: Color(0xFFDC2626),
                 fontWeight: FontWeight.bold,
@@ -1008,26 +923,27 @@ class _CompactEmployeeCard extends StatelessWidget {
         ),
       );
     } else {
+      // Default is Present
       statusWidget = Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0x2864748B) : const Color(0xFFF1F5F9),
+          color: isDark ? const Color(0x2810B981) : const Color(0xFFECFDF5),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isDark ? const Color(0x4464748B) : const Color(0xFFE2E8F0),
+            color: isDark ? const Color(0x5510B981) : const Color(0x4410B981),
             width: 0.8,
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.touch_app_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), size: 11),
-            const SizedBox(width: 3.5),
+            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 11),
+            SizedBox(width: 3.5),
             Text(
-              'Tap to mark',
+              'Present (आया)',
               style: TextStyle(
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
+                color: Color(0xFF059669),
+                fontWeight: FontWeight.bold,
                 fontSize: 10,
               ),
             ),
@@ -1372,24 +1288,28 @@ class _CompactEmployeeCard extends StatelessWidget {
                     children: [
                       _buildQuickActionButton(
                         context,
-                        label: 'PRESENT',
-                        subtitle: 'आया • Full day',
-                        icon: Icons.check_circle_rounded,
-                        color: const Color(0xFF10B981),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _markAttendanceStatus(context, AttendanceStatus.present, dayEntries.firstOrNull);
-                        },
-                      ),
-                      _buildQuickActionButton(
-                        context,
                         label: 'ABSENT',
-                        subtitle: 'छुट्टी • Off today',
+                        subtitle: 'छुट्टी • Mark off',
                         icon: Icons.cancel_rounded,
                         color: const Color(0xFFEF4444),
                         onTap: () {
                           Navigator.pop(context);
                           _markAttendanceStatus(context, AttendanceStatus.absent, dayEntries.firstOrNull);
+                        },
+                      ),
+                      _buildQuickActionButton(
+                        context,
+                        label: 'PRESENT',
+                        subtitle: 'आया • Reset full day',
+                        icon: Icons.check_circle_rounded,
+                        color: const Color(0xFF10B981),
+                        onTap: () {
+                          Navigator.pop(context);
+                          if (dayEntries.isNotEmpty) {
+                            _clearAttendance(context);
+                          } else {
+                            _markAttendanceStatus(context, AttendanceStatus.present, dayEntries.firstOrNull);
+                          }
                         },
                       ),
                       _buildQuickActionButton(
