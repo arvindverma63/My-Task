@@ -80,6 +80,7 @@ lib/
 │   └── local_appliance_repository.dart# SQLite offline fallback
 ├── screens/
 │   ├── auth_screen.dart           # Login, Register, Google Sign-In, Guest Trial
+│   ├── onboarding_screen.dart     # First-Time 4-Option Vector Onboarding & Module Chooser
 │   ├── main_dashboard_screen.dart # Executive Bottom Nav shell, Trial banner, Dialogs
 │   ├── employee_management_screen.dart # Attendance roster, 1-tap quick buttons, calendar
 │   ├── employee_detail_screen.dart# Staff financial profile, advance dialog, history
@@ -89,6 +90,9 @@ lib/
 │   └── theme_settings_screen.dart # Profile edit, theme toggle, backup export
 ├── services/
 │   └── pdf_service.dart           # Formatted PDF statement & roster generator
+├── widgets/
+│   ├── app_logo.dart              # Vector brand logo & icon badge
+│   └── vector_illustrations.dart  # Canvas CustomPainter vector graphics for all 4 modules
 └── utils/
     └── session_manager.dart       # SharedPreferences wrapper for auth/guest tokens
 ```
@@ -258,14 +262,17 @@ class ServiceRecord {
 - **Timeline & Receipt Storage**:
   - Chronological service logs per item with refill notes, service costs, and receipt image previews.
 
-### 4.5 Navigation Shell & Mobile Polish
-- **Custom Executive Bottom Navigation Bar**:
-  - 22 dp sliding top active indicator bar (`#10B981`).
-  - Active tab micro-scale pill capsule (`primary.withAlpha(22–45)`) with spring scale.
-  - `HapticFeedback.selectionClick()` on tab switches.
-  - Adaptive surface and soft elevation (`#0F172A` in dark mode).
+### 4.5 Executive Home Screen Hub & Page Redirection
+- **Dedicated 4-Option Home Dashboard**:
+  - The application replaces standard persistent bottom navigation with a clean, executive Home Screen Hub containing 4 prominent redirection cards:
+    1. **Helper Attendance & Salary Register (`कामवाली / हेल्पर अटेंडेंस`)** -> opens `EmployeeManagementScreen`
+    2. **Ironing & Laundry Registry (`धोबी / इस्त्री का हिसाब`)** -> opens `IroningDashboardScreen`
+    3. **Appliances & Home Services (`घरेलू उपकरण व गैस/सर्विस`)** -> opens `MaintenanceScreen`
+    4. **PDF Reports & Account Settings (`रिपोर्ट्स, बैकअप व सेटिंग्स`)** -> opens `ThemeSettingsScreen`
+  - Integrated top overview summary metrics bar (active helpers, dhobi workers, total home assets, active warranties).
+  - Child screens feature integrated leading back arrow navigation (`Icons.arrow_back_ios_new_rounded`) to return to the Home Hub smoothly.
 - **Mobile-First Compact Density**:
-  - Standardized margins (`12–14 dp`), border radii (`12–16 dp`), button heights (`40–44 dp`).
+  - Standardized margins (`12–16 dp`), border radii (`14–16 dp`), tactile haptics.
   - Eliminates horizontal overflow and awkward vertical scroll clipping on 360–412 dp devices (e.g., Moto G45 5G).
 
 ---
@@ -374,6 +381,8 @@ Any future modifications must strictly adhere to the following build gates:
 - ✅ **Universal Modal & Dialog Suite Overhaul (v1.1.0)**: Modernized `EmployeeFormDialog`, `_showEditAttendanceDialog`, `_showTimeOffsetDialog`, `_showAddWorkerDialog`, `_showEditRatesDialog`, `_showAddClothesDialog`, and `_showAddApplianceDialog` with color-coded gradient headers, dark mode slate backgrounds, crisp input borders, preset quick chips, and loading state protection.
 - ✅ **Settings & Account Management Overhaul (v1.1.0)**: Modernized `ThemeSettingsScreen` with visual Light/Dark mode selector cards, user profile header with halo avatars, Gold/Amber subscription status cards, modern backup export/restore modals, and session logout dialogs.
 - ✅ **Hostinger Cloud Sync Integration**: REST endpoints for staff, attendance, laundry, appliances, and user sessions.
+- ✅ **First-Time 4-Option Vector Onboarding Screen (v1.1.0)**: Interactive full-screen first-launch experience with custom canvas vector illustrations (`vector_illustrations.dart`), module feature cards, interactive 4-option bottom selector, direct tab jumping, and persistent preference memory.
+- ✅ **Executive Home Screen 4-Option Redirection Hub (v1.1.0)**: Removed persistent bottom navigation bar. Transformed the home screen into an executive dashboard hub featuring 4 large vector-illustrated redirection cards (Attendance, Ironing, Appliances & Services, and Reports/Settings), real-time summary counters, quick action chips, and back button navigation across all child screens.
 
 ### 8.2 Future Planned Roadmap (Backlog for Future Updates)
 - [ ] **Offline Sync Queue**: Implement local SQLite queue that automatically pushes mutations to the cloud when internet connection is restored.

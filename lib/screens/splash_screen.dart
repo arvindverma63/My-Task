@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/employee_provider.dart';
 import '../providers/appliance_provider.dart';
 import '../utils/session_manager.dart';
 import '../widgets/app_logo.dart';
 import 'auth_screen.dart';
 import 'main_dashboard_screen.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -119,8 +121,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     if (!mounted) return;
 
     // 3. Route to destination
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding_v2') ?? false;
+
     Widget destination;
-    if (userId == null) {
+    if (!hasSeenOnboarding) {
+      destination = const OnboardingScreen();
+    } else if (userId == null) {
       destination = const AuthScreen();
     } else if (isExpired) {
       await session.clearSession();

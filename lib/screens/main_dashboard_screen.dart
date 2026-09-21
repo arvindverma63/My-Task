@@ -6,6 +6,9 @@ import 'employee_management_screen.dart';
 import 'ironing_dashboard_screen.dart';
 import 'maintenance_screen.dart';
 import 'theme_settings_screen.dart';
+import 'employee_report_screen.dart';
+import 'user_profile_screen.dart';
+import 'onboarding_screen.dart';
 
 import '../providers/employee_provider.dart';
 import '../providers/appliance_provider.dart';
@@ -13,39 +16,42 @@ import '../models/employee_model.dart';
 import '../models/ironing_model.dart';
 import '../models/appliance_model.dart';
 import '../utils/session_manager.dart';
+import '../widgets/vector_illustrations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class MainDashboardScreen extends StatefulWidget {
-  const MainDashboardScreen({super.key});
+  final int initialIndex;
+  const MainDashboardScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainDashboardScreen> createState() => _MainDashboardScreenState();
 }
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
-  int _currentIndex = 0;
   bool _isGuest = false;
   int _guestDaysRemaining = 30;
   String? _userId;
-
-  late final List<Widget> _screens;
+  String _username = 'User';
+  String? _profilePic;
 
   @override
   void initState() {
     super.initState();
     _loadSession();
-    _screens = [
-      const EmployeeManagementScreen(),
-      const IroningDashboardScreen(),
-      const MaintenanceScreen(),
-      ThemeSettingsScreen(
-        onStartTour: _showTourGuideDialog,
-        onRenewApp: _showRenewVerificationStep1,
-      ),
-    ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstLaunch();
+      // If user came from onboarding selecting a specific module > 0, direct them once
+      if (widget.initialIndex == 1) {
+        _navigateTo(const IroningDashboardScreen());
+      } else if (widget.initialIndex == 2) {
+        _navigateTo(const MaintenanceScreen());
+      } else if (widget.initialIndex == 3) {
+        _navigateTo(ThemeSettingsScreen(
+          onStartTour: _showTourGuideDialog,
+          onRenewApp: _showRenewVerificationStep1,
+        ));
+      }
     });
   }
 
@@ -54,28 +60,43 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     final type = await session.getUserType();
     final days = await session.getDaysRemaining();
     final uid = await session.getUserId();
-    setState(() {
-      _isGuest = type == 'guest';
-      _guestDaysRemaining = days;
-      _userId = uid;
-    });
+    final uname = await session.getUsername();
+    final pic = await session.getProfilePic();
+
+    if (mounted) {
+      setState(() {
+        _isGuest = type == 'guest';
+        _guestDaysRemaining = days;
+        _userId = uid;
+        _username = (uname != null && uname.isNotEmpty) ? uname : (_isGuest ? 'Guest User' : 'User');
+        _profilePic = pic;
+      });
+    }
+  }
+
+  void _navigateTo(Widget screen) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => screen),
+    ).then((_) => _loadSession());
   }
 
   Widget _buildGuestBanner() {
     if (!_isGuest) return const SizedBox.shrink();
-    
+
     return Container(
       color: Colors.orange.shade800,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: SafeArea(
         bottom: false,
+        top: false,
         child: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Guest Mode: $_guestDaysRemaining days left',
+                'Guest Mode: $_guestDaysRemaining days left on trial',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -143,33 +164,33 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                       prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
                     ),
                     validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter username';
-                    }
-                    if (value.trim().length < 4) {
-                      return 'Username must be at least 4 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter username';
+                      }
+                      if (value.trim().length < 4) {
+                        return 'Username must be at least 4 characters';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
                 ],
               ),
             ),
@@ -255,18 +276,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     final isFirstLaunch = prefs.getBool('is_first_launch_v2') ?? true;
-    
+
     if (!mounted) return;
-    
-    if (isFirstLaunch && 
-        employeeProvider.employees.isEmpty && 
-        employeeProvider.ironingWorkers.isEmpty && 
+
+    if (isFirstLaunch &&
+        employeeProvider.employees.isEmpty &&
+        employeeProvider.ironingWorkers.isEmpty &&
         applianceProvider.appliances.isEmpty) {
       await _seedSampleData();
       await prefs.setBool('is_first_launch_v2', false);
-      if (mounted) {
-        _showTourGuideDialog();
-      }
     }
   }
 
@@ -297,7 +315,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       await employeeProvider.addEmployee(emp1);
       await employeeProvider.addEmployee(emp2);
 
-      // Seed attendance & payment for Ramesh (daily basis)
+      // Seed attendance for Ramesh
       final now = DateTime.now();
       for (int i = 1; i <= 5; i++) {
         final date = now.subtract(Duration(days: i));
@@ -368,165 +386,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 
   void _showTourGuideDialog() {
-    final colorScheme = Theme.of(context).colorScheme;
-    int currentStep = 0;
-
-    final List<Map<String, dynamic>> steps = [
-      {
-        'title': 'Welcome to My-Task! 👋',
-        'desc': 'This app is a simple diary to help you keep track of your daily house helpers, ironing records, gas cylinder refills, and appliance repairs.\n\nWe have added some example entries for you, so you can see how it works right away!',
-        'icon': Icons.home_work_rounded,
-        'tabIndex': 0,
-      },
-      {
-        'title': 'Helper Attendance 📅',
-        'desc': 'Under this tab, helpers are present by default. Tap the 1-tap Absent button if someone is on leave, and record cash advances or salary with on-screen reports.',
-        'icon': Icons.people_alt_rounded,
-        'tabIndex': 0,
-      },
-      {
-        'title': 'Ironing Wages 👕',
-        'desc': 'Keep track of your ironing helper\'s clothes by sizes (Small, Medium, Large, XL). The app automatically calculates wages and balance payments.',
-        'icon': Icons.iron_rounded,
-        'tabIndex': 1,
-      },
-      {
-        'title': 'Services & Appliances 🛠️',
-        'desc': 'Track gas cylinder refills, drinking water cans, Wi-Fi utilities, and home appliances (AC, TV, Fridge) with warranties, refill logs, and receipts.',
-        'icon': Icons.propane_tank_rounded,
-        'tabIndex': 2,
-      },
-      {
-        'title': 'Warranties & Receipts 🛡️',
-        'desc': 'Track when the warranty or renewal cycle is ending. Safe-keep consumer numbers, serial IDs, and bills in one place.',
-        'icon': Icons.security_rounded,
-        'tabIndex': 3,
-      },
-      {
-        'title': 'All Set! 🎉',
-        'desc': 'You are now ready to use the app! You can easily edit or delete the example data and replace it with your own helper names.\n\nTap the button below to start.',
-        'icon': Icons.check_circle_outline_rounded,
-        'tabIndex': 0,
-      },
-    ];
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDlgState) {
-          final step = steps[currentStep];
-          final stepIcon = step['icon'] as IconData;
-          final stepTitle = step['title'] as String;
-          final stepDesc = step['desc'] as String;
-          return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: colorScheme.primaryContainer,
-                      child: Icon(stepIcon, size: 28, color: colorScheme.primary),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      stepTitle,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, letterSpacing: 0.1),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      stepDesc,
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontSize: 13,
-                        height: 1.4,
-                        fontWeight: FontWeight.normal,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Step ${currentStep + 1} of ${steps.length}',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        steps.length,
-                        (index) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: currentStep == index ? 14 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            color: currentStep == index ? colorScheme.primary : colorScheme.outlineVariant.withAlpha(150),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          onPressed: () {
-                            setState(() => _currentIndex = 0);
-                            Navigator.pop(context);
-                          },
-                          child: Text(
-                            'Skip Tour',
-                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: () {
-                            if (currentStep < steps.length - 1) {
-                              setDlgState(() {
-                                currentStep++;
-                              });
-                              setState(() {
-                                _currentIndex = steps[currentStep]['tabIndex'] as int;
-                              });
-                            } else {
-                              setState(() => _currentIndex = 0);
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Text(
-                            currentStep == steps.length - 1 ? 'Finish 🏁' : 'Next ➡️',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
     );
   }
 
@@ -585,7 +446,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           title: Row(
             children: [
               Icon(Icons.lock_person_rounded, color: colorScheme.primary, size: 22),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               const Text('Verify Reset', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
@@ -646,11 +507,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     for (final app in appliances) {
       await applianceProvider.deleteAppliance(app.id);
     }
-    
+
     // 2. Re-seed sample data
     await _seedSampleData();
-    
-    // 3. Mark first launch completed in prefs but show the tour guide dialog
+
+    // 3. Mark first launch completed
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_first_launch_v2', false);
 
@@ -661,203 +522,697 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      setState(() {
-        _currentIndex = 0;
-      });
-      _showTourGuideDialog();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final employeeProvider = context.watch<EmployeeProvider>();
+    final applianceProvider = context.watch<ApplianceProvider>();
+
+    final helpersCount = employeeProvider.employees.length;
+    final workersCount = employeeProvider.ironingWorkers.length;
+    final appliancesCount = applianceProvider.appliances.length;
+
+    // Active warranties count
+    final now = DateTime.now();
+    final activeWarranties = applianceProvider.appliances.where((a) {
+      return a.warrantyEnd != null && a.warrantyEnd!.isAfter(now);
+    }).length;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: Column(
         children: [
           _buildGuestBanner(),
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: _screens,
+            child: RefreshIndicator(
+              color: const Color(0xFF10B981),
+              onRefresh: () async {
+                await Future.wait([
+                  context.read<EmployeeProvider>().refreshData(),
+                  context.read<ApplianceProvider>().loadAppliances(),
+                ]);
+                await _loadSession();
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                slivers: [
+                  // 1. Executive Top Bar Header
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        child: Row(
+                          children: [
+                            // App Logo Badge
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF10B981).withAlpha(80),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.task_alt_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'My-Task',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: -0.4,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: _isGuest
+                                              ? Colors.amber.withAlpha(isDark ? 40 : 25)
+                                              : const Color(0xFF10B981).withAlpha(isDark ? 40 : 25),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: _isGuest ? Colors.amber.shade700 : const Color(0xFF10B981),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _isGuest ? 'Guest Trial' : 'Active',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: _isGuest
+                                                ? (isDark ? Colors.amber.shade300 : Colors.amber.shade900)
+                                                : const Color(0xFF10B981),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Household Management Hub',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // User Profile Avatar Shortcut
+                            GestureDetector(
+                              onTap: () => _navigateTo(const UserProfileScreen()),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF10B981).withAlpha(120),
+                                    width: 1.8,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: const Color(0xFF10B981).withAlpha(30),
+                                  backgroundImage: _profilePic != null && _profilePic!.isNotEmpty
+                                      ? NetworkImage(_profilePic!)
+                                      : null,
+                                  child: _profilePic == null || _profilePic!.isEmpty
+                                      ? Text(
+                                          _username.isNotEmpty ? _username[0].toUpperCase() : 'U',
+                                          style: const TextStyle(
+                                            color: Color(0xFF10B981),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2. Welcome Greeting & Quick Metrics Banner
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                                : [const Color(0xFFFFFFFF), const Color(0xFFF1F5F9)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(isDark ? 30 : 6),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Namaste, $_username 👋',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Select a module',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Summary Pill Metrics Bar
+                            Row(
+                              children: [
+                                _buildSummaryMetric(
+                                  icon: Icons.people_alt_rounded,
+                                  value: '$helpersCount',
+                                  label: 'Helpers',
+                                  color: const Color(0xFF10B981),
+                                  isDark: isDark,
+                                ),
+                                const SizedBox(width: 6),
+                                _buildSummaryMetric(
+                                  icon: Icons.iron_rounded,
+                                  value: '$workersCount',
+                                  label: 'Dhobis',
+                                  color: const Color(0xFF6366F1),
+                                  isDark: isDark,
+                                ),
+                                const SizedBox(width: 6),
+                                _buildSummaryMetric(
+                                  icon: Icons.propane_tank_rounded,
+                                  value: '$appliancesCount',
+                                  label: 'Assets',
+                                  color: const Color(0xFF0D9488),
+                                  isDark: isDark,
+                                ),
+                                const SizedBox(width: 6),
+                                _buildSummaryMetric(
+                                  icon: Icons.security_rounded,
+                                  value: '$activeWarranties',
+                                  label: 'Active',
+                                  color: const Color(0xFFF59E0B),
+                                  isDark: isDark,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 3. Section Title
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.dashboard_customize_rounded, size: 16, color: Color(0xFF10B981)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'MAIN MODULES (मुख्य विकल्प)',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 4. The 4 Main Redirection Cards
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        // Option 1: Attendance Register
+                        _buildMainOptionCard(
+                          title: 'Helper Attendance & Salary',
+                          hindiTitle: 'कामवाली / हेल्पर अटेंडेंस व पगार',
+                          subtitle: '1-tap Present / Absent tracking, advance payouts, and automatic monthly wage calculations.',
+                          badgeText: '$helpersCount Helpers Active',
+                          accentColor: const Color(0xFF10B981),
+                          gradient: const [Color(0xFF10B981), Color(0xFF059669)],
+                          icon: Icons.people_alt_rounded,
+                          vectorArt: const AttendanceVectorArt(size: 78),
+                          isDark: isDark,
+                          onTap: () => _navigateTo(const EmployeeManagementScreen()),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Option 2: Ironing & Dhobi Tracker
+                        _buildMainOptionCard(
+                          title: 'Ironing & Dhobi Registry',
+                          hindiTitle: 'धोबी / इस्त्री का हिसाब व रेट कार्ड',
+                          subtitle: 'Batch garment counter by size (S, M, L, XL), customizable rate cards, and vendor balance ledger.',
+                          badgeText: workersCount > 0 ? '$workersCount Dhobis Active' : 'Add First Worker',
+                          accentColor: const Color(0xFF6366F1),
+                          gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
+                          icon: Icons.iron_rounded,
+                          vectorArt: const IroningVectorArt(size: 78),
+                          isDark: isDark,
+                          onTap: () => _navigateTo(const IroningDashboardScreen()),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Option 3: Services & Appliances Hub
+                        _buildMainOptionCard(
+                          title: 'Appliances & Home Services',
+                          hindiTitle: 'घरेलू उपकरण, गैस सिलिंडर व सर्विस',
+                          subtitle: 'LPG cylinder refills, drinking water delivery, AC service, warranties & invoice records.',
+                          badgeText: '$appliancesCount Items • $activeWarranties Active',
+                          accentColor: const Color(0xFF0D9488),
+                          gradient: const [Color(0xFF0D9488), Color(0xFF0F766E)],
+                          icon: Icons.propane_tank_rounded,
+                          vectorArt: const ApplianceVectorArt(size: 78),
+                          isDark: isDark,
+                          onTap: () => _navigateTo(const MaintenanceScreen()),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Option 4: Reports, Backup & Settings
+                        _buildMainOptionCard(
+                          title: 'PDF Reports & App Settings',
+                          hindiTitle: 'रिपोर्ट्स, बैकअप व सेटिंग्स',
+                          subtitle: 'Download monthly attendance salary slips, manage cloud backup, profile, and dark mode.',
+                          badgeText: 'Reports & Sync',
+                          accentColor: const Color(0xFFF59E0B),
+                          gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                          icon: Icons.settings_rounded,
+                          vectorArt: const ReportsSettingsVectorArt(size: 78),
+                          isDark: isDark,
+                          onTap: () => _navigateTo(ThemeSettingsScreen(
+                            onStartTour: _showTourGuideDialog,
+                            onRenewApp: _showRenewVerificationStep1,
+                          )),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Quick Action Shortcuts Bar
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.bolt_rounded, color: Color(0xFFF59E0B), size: 16),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'QUICK SHORTCUTS',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildQuickButton(
+                                      icon: Icons.analytics_rounded,
+                                      label: 'Full Report',
+                                      color: const Color(0xFF10B981),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(const EmployeeReportScreen()),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _buildQuickButton(
+                                      icon: Icons.explore_rounded,
+                                      label: 'Guided Tour',
+                                      color: const Color(0xFF6366F1),
+                                      isDark: isDark,
+                                      onTap: _showTourGuideDialog,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _buildQuickButton(
+                                      icon: Icons.person_rounded,
+                                      label: 'Profile',
+                                      color: const Color(0xFF0D9488),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(const UserProfileScreen()),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _buildProfessionalBottomNav(colorScheme, isDark),
     );
   }
 
-  Widget _buildProfessionalBottomNav(ColorScheme colorScheme, bool isDark) {
-    final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final borderColor = isDark ? Colors.white.withAlpha(18) : Colors.black.withAlpha(12);
-
-    final navItems = [
-      const _NavItemData(
-        icon: Icons.people_alt_outlined,
-        selectedIcon: Icons.people_alt_rounded,
-        label: 'Attendance',
-      ),
-      const _NavItemData(
-        icon: Icons.iron_outlined,
-        selectedIcon: Icons.iron_rounded,
-        label: 'Ironing',
-      ),
-      const _NavItemData(
-        icon: Icons.devices_other_outlined,
-        selectedIcon: Icons.devices_other_rounded,
-        label: 'Services & Assets',
-      ),
-      _NavItemData(
-        icon: Icons.settings_outlined,
-        selectedIcon: Icons.settings_rounded,
-        label: 'Settings',
-        badgeDot: _isGuest,
-      ),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(
-          top: BorderSide(color: borderColor, width: 1),
+  Widget _buildSummaryMetric({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withAlpha(isDark ? 28 : 16),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withAlpha(45), width: 0.8),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 60 : 8),
-            blurRadius: 14,
-            offset: const Offset(0, -3),
-          ),
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 12, color: color),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 1),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 54,
-          child: Row(
-            children: List.generate(navItems.length, (index) {
-              final item = navItems[index];
-              final isSelected = _currentIndex == index;
+    );
+  }
 
-              return Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    splashColor: colorScheme.primary.withAlpha(20),
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      if (_currentIndex != index) {
-                        HapticFeedback.selectionClick();
-                        setState(() => _currentIndex = index);
-                      }
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildMainOptionCard({
+    required String title,
+    required String hindiTitle,
+    required String subtitle,
+    required String badgeText,
+    required Color accentColor,
+    required List<Color> gradient,
+    required IconData icon,
+    required Widget vectorArt,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: accentColor.withAlpha(25),
+        highlightColor: accentColor.withAlpha(15),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withAlpha(isDark ? 20 : 12),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Vector Art Visual Thumbnail
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: accentColor.withAlpha(isDark ? 30 : 18),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accentColor.withAlpha(50)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: vectorArt,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Card Text Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Badge row
+                    Row(
                       children: [
-                        // Subtle top indicator bar
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutCubic,
-                          height: 2.5,
-                          width: isSelected ? 22 : 0,
-                          decoration: BoxDecoration(
-                            color: isSelected ? colorScheme.primary : Colors.transparent,
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(2)),
-                          ),
-                        ),
-                        // Icon capsule with micro-scale & optional badge
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 240),
-                              curve: Curves.easeOutCubic,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isSelected ? 12 : 6,
-                                vertical: 3.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? colorScheme.primary.withAlpha(isDark ? 45 : 22)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: AnimatedScale(
-                                scale: isSelected ? 1.06 : 1.0,
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeOutBack,
-                                child: Icon(
-                                  isSelected ? item.selectedIcon : item.icon,
-                                  size: 20.5,
-                                  color: isSelected
-                                      ? colorScheme.primary
-                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                                ),
-                              ),
-                            ),
-                            if (item.badgeDot)
-                              Positioned(
-                                top: 1,
-                                right: isSelected ? 8 : 2,
-                                child: Container(
-                                  width: 6.5,
-                                  height: 6.5,
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade700,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: bg,
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        // Label text with animated style
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 3),
-                          child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 200),
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected
-                                  ? colorScheme.primary
-                                  : (isDark ? Colors.white54 : const Color(0xFF64748B)),
-                              letterSpacing: isSelected ? -0.2 : 0,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: accentColor.withAlpha(isDark ? 40 : 20),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              item.label,
+                              hindiTitle,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: accentColor,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 5),
+
+                    // Title
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.2,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+
+                    // Subtitle
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.3,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Action Arrow Link
+                    Row(
+                      children: [
+                        Text(
+                          'Open Module',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: accentColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: accentColor,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-            }),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
-class _NavItemData {
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
-  final bool badgeDot;
-
-  const _NavItemData({
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
-    this.badgeDot = false,
-  });
+  Widget _buildQuickButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(
+            color: color.withAlpha(isDark ? 25 : 15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withAlpha(45), width: 0.8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

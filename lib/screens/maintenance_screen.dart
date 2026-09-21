@@ -410,6 +410,20 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   ),
                   child: Row(
                     children: [
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 18,
+                            color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488),
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          tooltip: 'Back to Home',
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                       Container(
                         width: 38,
                         height: 38,

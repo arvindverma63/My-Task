@@ -67,6 +67,17 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                       ),
                       child: Row(
                         children: [
+                          if (Navigator.canPop(context)) ...[
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                              color: const Color(0xFF10B981),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              tooltip: 'Back to Home',
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
