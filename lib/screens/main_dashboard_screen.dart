@@ -72,6 +72,38 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         _profilePic = pic;
       });
     }
+
+    if (uid != null && uid.isNotEmpty) {
+      try {
+        final response = await http.get(
+          Uri.parse('https://slateblue-guanaco-751834.hostingersite.com/api/get-profile?userId=$uid'),
+          headers: {'X-User-Id': uid, 'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data['success'] == true) {
+            await session.saveSession(
+              userId: uid,
+              username: data['username'] ?? _username,
+              userType: data['userType'] ?? (type ?? 'guest'),
+              expiresAt: data['expiresAt'],
+              profilePic: data['profilePic'],
+            );
+            final freshDays = await session.getDaysRemaining();
+            if (mounted) {
+              setState(() {
+                _username = data['username'] ?? _username;
+                _profilePic = data['profilePic'] ?? _profilePic;
+                _guestDaysRemaining = freshDays;
+              });
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback gracefully on network timeout
+      }
+    }
   }
 
   void _navigateTo(Widget screen) {
@@ -86,40 +118,42 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
     return Container(
       color: Colors.orange.shade800,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: SafeArea(
         bottom: false,
-        top: false,
-        child: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Guest Mode: $_guestDaysRemaining days left on trial',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+        top: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Guest Mode: $_guestDaysRemaining days left on trial',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ),
-            ),
-            TextButton(
-              onPressed: _showUpgradeAccountDialog,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.orange.shade900,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              TextButton(
+                onPressed: _showUpgradeAccountDialog,
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.orange.shade900,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                child: const Text(
+                  'Upgrade',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                ),
               ),
-              child: const Text(
-                'Upgrade',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -343,8 +377,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       await employeeProvider.addIroningWorker(worker1);
 
       // Seed specific rates for Karan Singh
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_big_rate', clothingType: 'Big Clothes', rate: 7.0, date: DateTime.now()));
       await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_small_rate', clothingType: 'Small Clothes', rate: 4.0, date: DateTime.now()));
-      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_large_rate', clothingType: 'Large Clothes', rate: 7.0, date: DateTime.now()));
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_sheets_rate', clothingType: 'Sheets', rate: 10.0, date: DateTime.now()));
+      await employeeProvider.saveIronRate(worker1.id, IronRate(id: '${pfx}_others_rate', clothingType: 'Others', rate: 5.0, date: DateTime.now()));
 
       // 3. Seed Appliances & Home Services
       final appliance1 = Appliance(
@@ -563,6 +599,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   SliverToBoxAdapter(
                     child: SafeArea(
                       bottom: false,
+                      top: !_isGuest,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                         child: Row(
@@ -659,23 +696,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                     width: 1.8,
                                   ),
                                 ),
-                                child: CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: const Color(0xFF10B981).withAlpha(30),
-                                  backgroundImage: _profilePic != null && _profilePic!.isNotEmpty
-                                      ? NetworkImage(_profilePic!)
-                                      : null,
-                                  child: _profilePic == null || _profilePic!.isEmpty
-                                      ? Text(
-                                          _username.isNotEmpty ? _username[0].toUpperCase() : 'U',
-                                          style: const TextStyle(
-                                            color: Color(0xFF10B981),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        )
-                                      : null,
-                                ),
+                                child: _buildAvatarCircle(radius: 18),
                               ),
                             ),
                           ],
@@ -937,7 +958,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: MediaQuery.paddingOf(context).bottom + 28),
                       ]),
                     ),
                   ),
@@ -1213,6 +1234,58 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAvatarCircle({double radius = 18}) {
+    final hasPic = _profilePic != null && _profilePic!.trim().isNotEmpty;
+    final picUrl = hasPic
+        ? (_profilePic!.startsWith('http')
+            ? _profilePic!
+            : 'https://slateblue-guanaco-751834.hostingersite.com/${_profilePic!.startsWith('/') ? _profilePic!.substring(1) : _profilePic!}')
+        : null;
+
+    final isGeneric = _username.isEmpty || _username == 'Guest User' || _username == 'User';
+    final initial = !isGeneric ? _username[0].toUpperCase() : '';
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: const Color(0xFF10B981).withAlpha(30),
+      child: ClipOval(
+        child: picUrl != null
+            ? Image.network(
+                picUrl,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(radius, initial),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return _buildFallbackAvatar(radius, initial);
+                },
+              )
+            : _buildFallbackAvatar(radius, initial),
+      ),
+    );
+  }
+
+  Widget _buildFallbackAvatar(double radius, String initial) {
+    if (initial.isNotEmpty) {
+      return Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: const Color(0xFF10B981),
+            fontWeight: FontWeight.bold,
+            fontSize: radius * 0.85,
+          ),
+        ),
+      );
+    }
+    return Icon(
+      Icons.person_rounded,
+      color: const Color(0xFF10B981),
+      size: radius * 1.15,
     );
   }
 }

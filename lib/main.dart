@@ -9,6 +9,7 @@ import 'providers/employee_provider.dart';
 import 'repositories/api_employee_repository.dart';
 import 'providers/appliance_provider.dart';
 import 'repositories/api_appliance_repository.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,8 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
   
+  await NotificationService().init();
+
   runApp(const MyApp());
 }
 

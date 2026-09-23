@@ -732,11 +732,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final totalAppliances = appProvider.appliances.length;
     final isGuest = _userType == 'guest';
 
-    final hasPic = _profilePic != null && _profilePic!.isNotEmpty;
+    final hasPic = _profilePic != null && _profilePic!.trim().isNotEmpty;
     final avatarUrl = hasPic
         ? (_profilePic!.startsWith('http')
             ? _profilePic!
-            : 'https://slateblue-guanaco-751834.hostingersite.com/$_profilePic')
+            : 'https://slateblue-guanaco-751834.hostingersite.com/${_profilePic!.startsWith('/') ? _profilePic!.substring(1) : _profilePic!}')
         : null;
 
     return Scaffold(
@@ -880,12 +880,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: CircleAvatar(
                   radius: 46,
                   backgroundColor: Colors.white.withAlpha(40),
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                   child: _isUploadingPic
                       ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                      : (avatarUrl == null
-                          ? const Icon(Icons.person_rounded, size: 50, color: Colors.white)
-                          : null),
+                      : ClipOval(
+                          child: avatarUrl != null
+                              ? Image.network(
+                                  avatarUrl,
+                                  width: 92,
+                                  height: 92,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.person_rounded,
+                                    size: 50,
+                                    color: Colors.white,
+                                  ),
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    );
+                                  },
+                                )
+                              : const Icon(Icons.person_rounded, size: 50, color: Colors.white),
+                        ),
                 ),
               ),
               InkWell(

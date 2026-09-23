@@ -321,14 +321,16 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildUserProfileHeader(bool isDark) {
-    final hasImage = _profilePic != null && _profilePic!.isNotEmpty;
+    final hasImage = _profilePic != null && _profilePic!.trim().isNotEmpty;
     final imageUrl = hasImage
         ? (_profilePic!.startsWith('http')
             ? _profilePic!
-            : 'https://slateblue-guanaco-751834.hostingersite.com/$_profilePic')
+            : 'https://slateblue-guanaco-751834.hostingersite.com/${_profilePic!.startsWith('/') ? _profilePic!.substring(1) : _profilePic!}')
         : null;
 
     final isGuest = _userType == 'guest';
+    final isGeneric = _username.isEmpty || _username == 'Guest User' || _username == 'User';
+    final initial = !isGeneric ? _username[0].toUpperCase() : '';
 
     return InkWell(
       onTap: () async {
@@ -377,14 +379,21 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                     backgroundColor: isGuest
                         ? const Color(0xFF0D9488).withAlpha(25)
                         : const Color(0xFFF59E0B).withAlpha(25),
-                    backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-                    child: imageUrl == null
-                        ? Icon(
-                            Icons.person_rounded,
-                            size: 28,
-                            color: isGuest ? const Color(0xFF0D9488) : const Color(0xFFF59E0B),
-                          )
-                        : null,
+                    child: ClipOval(
+                      child: imageUrl != null
+                          ? Image.network(
+                              imageUrl,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildFallbackProfileAvatar(isGuest, initial),
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return _buildFallbackProfileAvatar(isGuest, initial);
+                              },
+                            )
+                          : _buildFallbackProfileAvatar(isGuest, initial),
+                    ),
                   ),
                 ),
                 Container(
@@ -492,6 +501,26 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFallbackProfileAvatar(bool isGuest, String initial) {
+    if (initial.isNotEmpty) {
+      return Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: isGuest ? const Color(0xFF0D9488) : const Color(0xFFF59E0B),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      );
+    }
+    return Icon(
+      Icons.person_rounded,
+      size: 28,
+      color: isGuest ? const Color(0xFF0D9488) : const Color(0xFFF59E0B),
     );
   }
 

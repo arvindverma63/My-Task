@@ -875,10 +875,9 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
       builder: (context, snapshot) {
         final ratesList = snapshot.data ?? [];
         final Map<String, double> ratesMap = {
+          'Big Clothes': 7.0,
           'Small Clothes': 4.0,
-          'Medium Clothes': 5.0,
-          'Large Clothes': 7.0,
-          'XL Clothes': 10.0,
+          'Sheets': 10.0,
           'Others': 5.0,
         };
         for (final rate in ratesList) {
@@ -1808,17 +1807,15 @@ class _AddClothesDialogState extends State<_AddClothesDialog> {
     if (mounted) {
       setState(() {
         _counts = {
+          'Big Clothes': 0,
           'Small Clothes': 0,
-          'Medium Clothes': 0,
-          'Large Clothes': 0,
-          'XL Clothes': 0,
+          'Sheets': 0,
           'Others': 0,
         };
         _rates = {
+          'Big Clothes': 7.0,
           'Small Clothes': 4.0,
-          'Medium Clothes': 5.0,
-          'Large Clothes': 7.0,
-          'XL Clothes': 10.0,
+          'Sheets': 10.0,
           'Others': 5.0,
         };
         for (final rate in list) {
@@ -2616,12 +2613,14 @@ class _PaymentLogsTab extends StatelessWidget {
 
 IconData _getClothTypeIcon(String type) {
   final lower = type.toLowerCase();
-  if (lower.contains('small')) {
+  if (lower.contains('big') || lower.contains('large')) {
+    return Icons.checkroom_rounded;
+  } else if (lower.contains('small')) {
     return Icons.style_rounded;
+  } else if (lower.contains('sheet') || lower.contains('bed')) {
+    return Icons.single_bed_rounded;
   } else if (lower.contains('medium')) {
     return Icons.checkroom_rounded;
-  } else if (lower.contains('large') && !lower.contains('extra') && !lower.contains('xl')) {
-    return Icons.dry_cleaning_rounded;
   } else if (lower.contains('xl') || lower.contains('extra')) {
     return Icons.layers_rounded;
   } else if (lower.contains('shirt')) {
@@ -2638,12 +2637,14 @@ IconData _getClothTypeIcon(String type) {
 
 Color _getClothTypeColor(String type) {
   final lower = type.toLowerCase();
-  if (lower.contains('small')) {
+  if (lower.contains('big') || lower.contains('large')) {
+    return const Color(0xFFD97706); // Warm Sunset Amber
+  } else if (lower.contains('small')) {
     return const Color(0xFF0D9488); // Teal
+  } else if (lower.contains('sheet') || lower.contains('bed')) {
+    return const Color(0xFF6366F1); // Indigo
   } else if (lower.contains('medium')) {
     return const Color(0xFF0284C7); // Sky Blue
-  } else if (lower.contains('large') && !lower.contains('extra') && !lower.contains('xl')) {
-    return const Color(0xFFD97706); // Warm Sunset Amber
   } else if (lower.contains('xl') || lower.contains('extra')) {
     return const Color(0xFFE11D48); // Rose / Coral
   } else if (lower.contains('shirt')) {

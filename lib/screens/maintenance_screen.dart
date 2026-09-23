@@ -258,71 +258,213 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value, IconData icon, bool isDark) {
+  Widget _buildFilterChip(String label, String value, IconData icon, bool isDark, {Color? badgeColor}) {
     final isSelected = _selectedFilter == value;
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedFilter = value;
-            });
-          },
-          borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
-            decoration: BoxDecoration(
+    final primaryColor = badgeColor ?? const Color(0xFF0D9488);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedFilter = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? primaryColor
+                : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
               color: isSelected
-                  ? const Color(0xFF0D9488)
-                  : (isDark ? const Color(0xFF1E293B) : Colors.white),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF0D9488)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                width: 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFF0D9488).withAlpha(80),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ]
-                  : null,
+                  ? primaryColor
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: 1,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 13,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: primaryColor.withAlpha(80),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 13,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                   color: isSelected
                       ? Colors.white
-                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
                 ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFrequencyChip(
+    String label,
+    String value,
+    String selectedValue,
+    ValueChanged<String> onSelected,
+    bool isDark,
+  ) {
+    final isSelected = selectedValue.toLowerCase() == value.toLowerCase();
+    return InkWell(
+      onTap: () => onSelected(value),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0D9488)
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0D9488)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+            width: isSelected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReminderTimingChip(
+    String label,
+    int days,
+    int selectedDays,
+    ValueChanged<int> onSelected,
+    bool isDark,
+  ) {
+    final isSelected = selectedDays == days;
+    return InkWell(
+      onTap: () => onSelected(days),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0D9488)
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0D9488)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+            width: isSelected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDueStatusBadge(Appliance appliance, bool isDark) {
+    if (!appliance.isRecurringDueActive) return const SizedBox.shrink();
+
+    final status = appliance.dueStatus;
+    final days = appliance.daysUntilDue ?? 0;
+    final freq = appliance.dueFrequency != null ? appliance.dueFrequency!.toUpperCase() : 'RECURRING';
+    final amountText = appliance.dueAmount != null && appliance.dueAmount! > 0
+        ? ' • ₹${appliance.dueAmount!.toStringAsFixed(0)}'
+        : '';
+
+    Color badgeBg;
+    Color badgeBorder;
+    Color textColor;
+    IconData icon;
+    String label;
+
+    if (status == 'overdue') {
+      badgeBg = const Color(0xFFEF4444).withAlpha(isDark ? 40 : 25);
+      badgeBorder = const Color(0xFFEF4444).withAlpha(120);
+      textColor = const Color(0xFFEF4444);
+      icon = Icons.error_outline_rounded;
+      final daysLate = days.abs();
+      label = 'OVERDUE: $daysLate d$amountText ($freq)';
+    } else if (status == 'due_today') {
+      badgeBg = const Color(0xFFF59E0B).withAlpha(isDark ? 45 : 30);
+      badgeBorder = const Color(0xFFF59E0B);
+      textColor = isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+      icon = Icons.alarm_rounded;
+      label = 'DUE TODAY$amountText ($freq)';
+    } else if (status == 'due_soon') {
+      badgeBg = const Color(0xFF0D9488).withAlpha(isDark ? 35 : 20);
+      badgeBorder = const Color(0xFF0D9488).withAlpha(100);
+      textColor = const Color(0xFF0D9488);
+      icon = Icons.schedule_rounded;
+      label = 'Due in $days d$amountText ($freq)';
+    } else {
+      badgeBg = const Color(0xFF64748B).withAlpha(isDark ? 30 : 15);
+      badgeBorder = const Color(0xFF64748B).withAlpha(80);
+      textColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+      icon = Icons.event_repeat_rounded;
+      final dateStr = appliance.nextDueDate != null ? DateFormat('d MMM').format(appliance.nextDueDate!) : '';
+      label = 'Next Due: $dateStr$amountText ($freq)';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: badgeBg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: badgeBorder, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: textColor),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: textColor),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -355,12 +497,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
     final int applianceCount = appliances.where((a) => !_isServiceItem(a)).length;
     final int serviceCount = appliances.where((a) => _isServiceItem(a)).length;
+    final int duesCount = appliances.where((a) => a.isRecurringDueActive).length;
 
     final displayedAppliances = appliances.where((app) {
       if (_selectedFilter == 'appliance') {
         return !_isServiceItem(app);
       } else if (_selectedFilter == 'service') {
         return _isServiceItem(app);
+      } else if (_selectedFilter == 'dues') {
+        return app.isRecurringDueActive;
       }
       return true;
     }).toList();
@@ -418,15 +563,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                             color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488),
                           ),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
                           tooltip: 'Back to Home',
                           onPressed: () => Navigator.pop(context),
                         ),
                         const SizedBox(width: 4),
                       ],
                       Container(
-                        width: 38,
-                        height: 38,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
@@ -437,56 +582,36 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: const Color(0xFF0D9488).withAlpha(80),
-                              blurRadius: 6,
+                              blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.propane_tank_rounded, color: Colors.white, size: 20),
+                        child: const Icon(Icons.propane_tank_rounded, color: Colors.white, size: 18),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    'Services & Assets',
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF042F2E),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF0D9488).withAlpha(isDark ? 60 : 30),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '${appliances.length} items',
-                                    style: const TextStyle(
-                                      color: Color(0xFF0D9488),
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
                             Text(
-                              'Gas, water, utilities & warranties',
+                              'Services & Utilities',
                               style: TextStyle(
-                                fontSize: 10.5,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF042F2E),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 1.5),
+                            Text(
+                              '${appliances.length} items • Refills, Bills & Dues',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -497,19 +622,19 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                       const SizedBox(width: 8),
                       Material(
                         color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         child: InkWell(
                           onTap: () => _showAddApplianceDialog(context),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: Ink(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: Colors.white.withAlpha(50),
                                 width: 0.8,
@@ -526,14 +651,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.add_rounded, size: 15, color: Colors.white),
-                                SizedBox(width: 4),
+                                SizedBox(width: 3),
                                 Text(
                                   'Add Item',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 11.5,
-                                    letterSpacing: 0.2,
                                   ),
                                 ),
                               ],
@@ -561,7 +685,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               ),
 
               // 3. Category Filter Chips
-              Padding(
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 child: Row(
                   children: [
@@ -570,6 +695,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     _buildFilterChip('Appliances ($applianceCount)', 'appliance', Icons.devices_other_rounded, isDark),
                     const SizedBox(width: 6),
                     _buildFilterChip('Services ($serviceCount)', 'service', Icons.handyman_rounded, isDark),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('Payment Dues ($duesCount)', 'dues', Icons.notifications_active_rounded, isDark, badgeColor: const Color(0xFFF59E0B)),
                   ],
                 ),
               ),
@@ -663,7 +790,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                         onRefresh: () => provider.loadAppliances(),
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          padding: EdgeInsets.fromLTRB(14, 4, 14, MediaQuery.paddingOf(context).bottom + 28),
                           itemCount: displayedAppliances.length,
                           itemBuilder: (context, index) {
                             final appliance = displayedAppliances[index];
@@ -786,6 +913,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                                           spacing: 5,
                                                           runSpacing: 3,
                                                           children: [
+                                                            if (appliance.isRecurringDueActive)
+                                                              _buildDueStatusBadge(appliance, isDark),
                                                             _buildWarrantyBadge(appliance.warrantyStart, appliance.warrantyEnd, isDark, isService: isService),
                                                             _buildServicingSummaryTag(records.length, totalCost, isDark, isService: isService),
                                                           ],
@@ -1167,8 +1296,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final typeController = TextEditingController();
     final brandController = TextEditingController();
     final serialController = TextEditingController();
+    final dueAmountController = TextEditingController();
     DateTime? warrantyStart;
     DateTime? warrantyEnd;
+    DateTime? nextDueDate;
+    String selectedDueFrequency = 'none';
+    int dueReminderDaysBefore = 1;
+    bool isDueNotificationEnabled = true;
     String? invoicePath;
     bool isSaving = false;
     String selectedCategory = 'service'; // Default to 'service' first
@@ -1657,6 +1791,212 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 12),
+
+                            // Recurring Due & Reminder Settings Card
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0FDFA),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: selectedDueFrequency != 'none'
+                                      ? const Color(0xFF0D9488)
+                                      : (isDark ? const Color(0xFF334155) : const Color(0xFFCCFBF1)),
+                                  width: selectedDueFrequency != 'none' ? 1.2 : 0.8,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.notifications_active_rounded, size: 16, color: const Color(0xFF0D9488)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Payment Due & Recurring Reminder',
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Auto-remind on refill, bill due, maintenance cycle',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Due Frequency',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: [
+                                        _buildFrequencyChip('None', 'none', selectedDueFrequency, (val) {
+                                          setDlgState(() => selectedDueFrequency = val);
+                                        }, isDark),
+                                        const SizedBox(width: 6),
+                                        _buildFrequencyChip('Daily', 'daily', selectedDueFrequency, (val) {
+                                          setDlgState(() {
+                                            selectedDueFrequency = val;
+                                            nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                          });
+                                        }, isDark),
+                                        const SizedBox(width: 6),
+                                        _buildFrequencyChip('Weekly', 'weekly', selectedDueFrequency, (val) {
+                                          setDlgState(() {
+                                            selectedDueFrequency = val;
+                                            nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                          });
+                                        }, isDark),
+                                        const SizedBox(width: 6),
+                                        _buildFrequencyChip('Monthly', 'monthly', selectedDueFrequency, (val) {
+                                          setDlgState(() {
+                                            selectedDueFrequency = val;
+                                            nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                          });
+                                        }, isDark),
+                                        const SizedBox(width: 6),
+                                        _buildFrequencyChip('Quarterly', 'quarterly', selectedDueFrequency, (val) {
+                                          setDlgState(() {
+                                            selectedDueFrequency = val;
+                                            nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                          });
+                                        }, isDark),
+                                        const SizedBox(width: 6),
+                                        _buildFrequencyChip('Yearly', 'yearly', selectedDueFrequency, (val) {
+                                          setDlgState(() {
+                                            selectedDueFrequency = val;
+                                            nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                          });
+                                        }, isDark),
+                                      ],
+                                    ),
+                                  ),
+                                  if (selectedDueFrequency != 'none') ...[
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: dueAmountController,
+                                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                            style: const TextStyle(fontSize: 13),
+                                            decoration: InputDecoration(
+                                              labelText: 'Due Amount (₹)',
+                                              labelStyle: const TextStyle(fontSize: 11.5),
+                                              prefixIcon: const Icon(Icons.currency_rupee_rounded, size: 16, color: Color(0xFF0D9488)),
+                                              filled: true,
+                                              fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () async {
+                                              final date = await showDatePicker(
+                                                context: context,
+                                                initialDate: nextDueDate ?? Appliance.calculateNextDueDate(DateTime.now(), selectedDueFrequency),
+                                                firstDate: DateTime(2020),
+                                                lastDate: DateTime(2100),
+                                              );
+                                              if (date != null) setDlgState(() => nextDueDate = date);
+                                            },
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                                              decoration: BoxDecoration(
+                                                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.event_repeat_rounded, size: 15, color: Color(0xFF0D9488)),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          'Next Due Date',
+                                                          style: TextStyle(
+                                                            fontSize: 9.5,
+                                                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          nextDueDate == null ? 'Pick Date' : DateFormat('dd/MM/yyyy').format(nextDueDate!),
+                                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Remind Me',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: [
+                                          _buildReminderTimingChip('On due day', 0, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                          const SizedBox(width: 6),
+                                          _buildReminderTimingChip('1 day before', 1, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                          const SizedBox(width: 6),
+                                          _buildReminderTimingChip('2 days before', 2, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                          const SizedBox(width: 6),
+                                          _buildReminderTimingChip('3 days before', 3, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                          const SizedBox(width: 6),
+                                          _buildReminderTimingChip('7 days before', 7, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1689,6 +2029,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                                 ? selectedPreset!
                                                 : (isService ? 'General Utility' : 'General Appliance'));
 
+                                        final dueAmt = double.tryParse(dueAmountController.text.trim());
+                                        final isRecurring = selectedDueFrequency != 'none';
+
                                         final appliance = Appliance(
                                           id: DateTime.now().millisecondsSinceEpoch.toString(),
                                           name: nameController.text.trim(),
@@ -1699,6 +2042,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                           warrantyEnd: warrantyEnd,
                                           invoicePath: invoicePath,
                                           createdAt: DateTime.now(),
+                                          dueFrequency: isRecurring ? selectedDueFrequency : null,
+                                          dueAmount: isRecurring ? dueAmt : null,
+                                          nextDueDate: isRecurring
+                                              ? (nextDueDate ?? Appliance.calculateNextDueDate(DateTime.now(), selectedDueFrequency))
+                                              : null,
+                                          dueReminderDaysBefore: dueReminderDaysBefore,
+                                          isDueNotificationEnabled: isRecurring ? isDueNotificationEnabled : false,
                                         );
                                         await context.read<ApplianceProvider>().addAppliance(appliance);
                                         if (context.mounted) {
@@ -1824,6 +2174,11 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+            tooltip: isService ? 'Edit Service Details' : 'Edit Appliance Specs',
+            onPressed: () => _showEditApplianceDialog(context, appliance, isService),
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
             tooltip: isService ? 'Remove Service' : 'Remove Appliance',
             onPressed: () => _confirmDeleteAppliance(context, appliance, isService),
@@ -1928,10 +2283,151 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
     final daysRemaining = hasWarranty && !isExpired ? appliance.warrantyEnd!.difference(now).inDays : 0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.fromLTRB(14, 14, 14, MediaQuery.paddingOf(context).bottom + 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Recurring Due & Reminder Status Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: appliance.isRecurringDueActive
+                    ? (appliance.dueStatus == 'overdue'
+                        ? const Color(0xFFEF4444).withAlpha(120)
+                        : (appliance.dueStatus == 'due_today'
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFF0D9488).withAlpha(100)))
+                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                width: appliance.isRecurringDueActive ? 1.2 : 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(isDark ? 25 : 5),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488).withAlpha(isDark ? 40 : 20),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.notifications_active_rounded, color: Color(0xFF0D9488), size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Payment Due & Recurring Reminder',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (appliance.isRecurringDueActive)
+                      _buildDueStatusBadge(appliance, isDark),
+                  ],
+                ),
+                Divider(height: 18, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                if (appliance.isRecurringDueActive) ...[
+                  _buildSpecRow('Frequency', appliance.dueFrequency!.toUpperCase(), isDark),
+                  if (appliance.dueAmount != null && appliance.dueAmount! > 0)
+                    _buildSpecRow('Recurring Amount', '₹${appliance.dueAmount!.toStringAsFixed(0)}', isDark, const Color(0xFF0D9488)),
+                  if (appliance.nextDueDate != null)
+                    _buildSpecRow(
+                      'Next Due Date',
+                      '${DateFormat('dd MMM yyyy').format(appliance.nextDueDate!)} (${appliance.daysUntilDue! < 0 ? "${appliance.daysUntilDue!.abs()}d overdue" : "${appliance.daysUntilDue}d remaining"})',
+                      isDark,
+                      appliance.daysUntilDue! < 0 ? const Color(0xFFEF4444) : (appliance.daysUntilDue! == 0 ? const Color(0xFFF59E0B) : null),
+                    ),
+                  _buildSpecRow(
+                    'Alert Timing',
+                    appliance.dueReminderDaysBefore == 0 ? 'On due date (9:00 AM)' : '${appliance.dueReminderDaysBefore} day(s) before (9:00 AM)',
+                    isDark,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D9488),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: () => _showMarkDuePaidDialog(context, appliance),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                          label: Text(
+                            isService ? 'Mark Refill / Paid' : 'Mark Due Paid',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: isDark ? Colors.white70 : const Color(0xFF475569),
+                          side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        onPressed: () => _showEditApplianceDialog(context, appliance, isService),
+                        icon: const Icon(Icons.tune_rounded, size: 15),
+                        label: const Text('Edit Schedule', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            'No recurring due or reminder schedule configured.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0D9488),
+                              side: const BorderSide(color: Color(0xFF0D9488)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            ),
+                            onPressed: () => _showEditApplianceDialog(context, appliance, isService),
+                            icon: const Icon(Icons.add_alarm_rounded, size: 15),
+                            label: const Text('Set Up Recurring Due Alert', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Specifications Card
           Container(
             padding: const EdgeInsets.all(14),
@@ -2451,118 +2947,120 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  padding: EdgeInsets.fromLTRB(14, 4, 14, MediaQuery.paddingOf(context).bottom + 28),
                   itemCount: records.length,
                   itemBuilder: (context, index) {
                     final log = records[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            children: [
-                              const SizedBox(height: 8),
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0D9488),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                              ),
-                              if (index < records.length - 1)
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Column(
+                              children: [
+                                const SizedBox(height: 10),
                                 Container(
-                                  width: 1.5,
-                                  height: 60,
-                                  color: const Color(0xFF0D9488).withAlpha(50),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0D9488),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 1.5),
+                                  ),
                                 ),
-                            ],
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(isDark ? 25 : 5),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
+                                if (index < records.length - 1)
+                                  Expanded(
+                                    child: Container(
+                                      width: 1.5,
+                                      color: const Color(0xFF0D9488).withAlpha(40),
+                                    ),
                                   ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '₹${log.price.toStringAsFixed(0)}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0D9488)),
-                                      ),
-                                      Text(
-                                        DateFormat('dd MMM yyyy').format(log.serviceDate),
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                                      ),
-                                    ],
-                                  ),
-                                  if (log.remarks.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      log.remarks,
-                                      style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF334155), fontSize: 12),
+                              ],
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha(isDark ? 20 : 4),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
                                     ),
                                   ],
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      if (log.billPath != null)
-                                        InkWell(
-                                          onTap: () => _viewBillPhoto(context, log.billPath!),
-                                          borderRadius: BorderRadius.circular(6),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF0D9488).withAlpha(isDark ? 30 : 15),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.receipt_rounded, size: 12, color: Color(0xFF0D9488)),
-                                                SizedBox(width: 4),
-                                                Text(
-                                                  'View Bill',
-                                                  style: TextStyle(fontSize: 10.5, color: Color(0xFF0D9488), fontWeight: FontWeight.bold),
-                                                ),
-                                              ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '₹${log.price.toStringAsFixed(0)}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: Color(0xFF0D9488)),
+                                        ),
+                                        if (log.billPath != null) ...[
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                            onTap: () => _viewBillPhoto(context, log.billPath!),
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF0D9488).withAlpha(isDark ? 30 : 15),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: const Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.receipt_rounded, size: 11, color: Color(0xFF0D9488)),
+                                                  SizedBox(width: 3),
+                                                  Text(
+                                                    'Bill',
+                                                    style: TextStyle(fontSize: 10, color: Color(0xFF0D9488), fontWeight: FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        )
-                                      else
-                                        const SizedBox.shrink(),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 18),
-                                        onPressed: () async {
-                                          await provider.deleteServiceRecord(log.id);
-                                          setState(() {});
-                                        },
+                                        ],
+                                        const Spacer(),
+                                        Text(
+                                          DateFormat('dd MMM yyyy').format(log.serviceDate),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        InkWell(
+                                          borderRadius: BorderRadius.circular(8),
+                                          onTap: () async {
+                                            await provider.deleteServiceRecord(log.id);
+                                            setState(() {});
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(2.0),
+                                            child: Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (log.remarks.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        log.remarks,
+                                        style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF475569), fontSize: 11.5),
                                       ),
                                     ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -2616,7 +3114,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
     bool isSaving = false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final presetPrices = [300, 500, 1000, 2000];
     final presetRemarks = isService
         ? ['Gas Cylinder Refill', 'Water Bottle Delivery', 'RO Filter Replacement', 'Monthly Subscription', 'Emergency Fix']
         : ['Routine Servicing', 'Gas Refill', 'Filter Replacement', 'Motor Repair', 'PCB Replacement'];
@@ -2714,29 +3211,7 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // Preset Cost Chips
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: presetPrices.map((amt) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: ActionChip(
-                                    label: Text('+₹$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                    backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                                    side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                                    onPressed: () {
-                                      final current = double.tryParse(priceController.text) ?? 0;
-                                      priceController.text = (current + amt).toStringAsFixed(0);
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           TextFormField(
                             controller: remarksController,
                             maxLines: 2,
@@ -2986,6 +3461,969 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrequencyChip(
+    String label,
+    String value,
+    String selectedValue,
+    ValueChanged<String> onSelected,
+    bool isDark,
+  ) {
+    final isSelected = selectedValue.toLowerCase() == value.toLowerCase();
+    return InkWell(
+      onTap: () => onSelected(value),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0D9488)
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0D9488)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+            width: isSelected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReminderTimingChip(
+    String label,
+    int days,
+    int selectedDays,
+    ValueChanged<int> onSelected,
+    bool isDark,
+  ) {
+    final isSelected = selectedDays == days;
+    return InkWell(
+      onTap: () => onSelected(days),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0D9488)
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0D9488)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+            width: isSelected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDueStatusBadge(Appliance appliance, bool isDark) {
+    if (!appliance.isRecurringDueActive) return const SizedBox.shrink();
+
+    final status = appliance.dueStatus;
+    final days = appliance.daysUntilDue ?? 0;
+    final freq = appliance.dueFrequency != null ? appliance.dueFrequency!.toUpperCase() : 'RECURRING';
+    final amountText = appliance.dueAmount != null && appliance.dueAmount! > 0
+        ? ' • ₹${appliance.dueAmount!.toStringAsFixed(0)}'
+        : '';
+
+    Color badgeBg;
+    Color badgeBorder;
+    Color textColor;
+    IconData icon;
+    String label;
+
+    if (status == 'overdue') {
+      badgeBg = const Color(0xFFEF4444).withAlpha(isDark ? 40 : 25);
+      badgeBorder = const Color(0xFFEF4444).withAlpha(120);
+      textColor = const Color(0xFFEF4444);
+      icon = Icons.error_outline_rounded;
+      final daysLate = days.abs();
+      label = 'OVERDUE: $daysLate d$amountText ($freq)';
+    } else if (status == 'due_today') {
+      badgeBg = const Color(0xFFF59E0B).withAlpha(isDark ? 45 : 30);
+      badgeBorder = const Color(0xFFF59E0B);
+      textColor = isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+      icon = Icons.alarm_rounded;
+      label = 'DUE TODAY$amountText ($freq)';
+    } else if (status == 'due_soon') {
+      badgeBg = const Color(0xFF0D9488).withAlpha(isDark ? 35 : 20);
+      badgeBorder = const Color(0xFF0D9488).withAlpha(100);
+      textColor = const Color(0xFF0D9488);
+      icon = Icons.schedule_rounded;
+      label = 'Due in $days d$amountText ($freq)';
+    } else {
+      badgeBg = const Color(0xFF64748B).withAlpha(isDark ? 30 : 15);
+      badgeBorder = const Color(0xFF64748B).withAlpha(80);
+      textColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+      icon = Icons.event_repeat_rounded;
+      final dateStr = appliance.nextDueDate != null ? DateFormat('d MMM').format(appliance.nextDueDate!) : '';
+      label = 'Next Due: $dateStr$amountText ($freq)';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: badgeBg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: badgeBorder, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10.5, color: textColor),
+          const SizedBox(width: 3.5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMarkDuePaidDialog(BuildContext context, Appliance appliance) {
+    final formKey = GlobalKey<FormState>();
+    final amountController = TextEditingController(
+      text: appliance.dueAmount != null && appliance.dueAmount! > 0
+          ? appliance.dueAmount!.toStringAsFixed(0)
+          : '',
+    );
+    final remarksController = TextEditingController(
+      text: '${appliance.name} ${appliance.dueFrequency != null ? appliance.dueFrequency!.toUpperCase() : ""} refill/due paid',
+    );
+    DateTime paidDate = DateTime.now();
+    String? billPath;
+    bool isSaving = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isService = _isServiceItem(appliance);
+
+    final nextCalculatedDue = appliance.getNextCycleDueDate(appliance.nextDueDate ?? DateTime.now());
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlgState) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF042F2E), const Color(0xFF134E4A)]
+                              : [const Color(0xFFF0FDFA), const Color(0xFFCCFBF1)],
+                        ),
+                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF0D9488) : const Color(0xFF99F6E4))),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Color(0xFF0D9488),
+                            child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isService ? 'Mark Refill / Bill Paid' : 'Mark Due Paid',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isDark ? Colors.white : const Color(0xFF042F2E),
+                                  ),
+                                ),
+                                Text(
+                                  'Appliance: ${appliance.name}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black.withAlpha(20),
+                              padding: const EdgeInsets.all(4),
+                              minimumSize: Size.zero,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (appliance.isRecurringDueActive)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0D9488).withAlpha(isDark ? 35 : 15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF0D9488).withAlpha(80)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.autorenew_rounded, size: 18, color: Color(0xFF0D9488)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Next due date will automatically advance to ${DateFormat("dd MMM yyyy").format(nextCalculatedDue)} (+1 ${appliance.dueFrequency} cycle).',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          TextFormField(
+                            controller: amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            validator: (v) => v == null || double.tryParse(v) == null || double.parse(v) < 0 ? 'Enter valid amount' : null,
+                            style: TextStyle(fontSize: 14, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                            decoration: InputDecoration(
+                              labelText: 'Paid Amount (₹) *',
+                              prefixIcon: const Icon(Icons.currency_rupee_rounded, color: Color(0xFF0D9488), size: 18),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Payment Date Picker
+                          InkWell(
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: paidDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2100),
+                              );
+                              if (date != null) setDlgState(() => paidDate = date);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0D9488)),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Paid Date: ${DateFormat('dd MMMM yyyy').format(paidDate)}',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: remarksController,
+                            maxLines: 2,
+                            style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                            decoration: InputDecoration(
+                              labelText: 'Notes / Remarks (Optional)',
+                              prefixIcon: const Icon(Icons.edit_note_rounded, color: Color(0xFF0D9488), size: 18),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Bill Photo Upload
+                          InkWell(
+                            onTap: () async {
+                              final picker = ImagePicker();
+                              final image = await picker.pickImage(source: ImageSource.gallery);
+                              if (image != null) {
+                                setDlgState(() => billPath = image.path);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: billPath == null
+                                    ? (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC))
+                                    : (isDark ? const Color(0x2810B981) : const Color(0xFFECFDF5)),
+                                border: Border.all(
+                                  color: billPath == null
+                                      ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
+                                      : const Color(0xFF10B981),
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    billPath == null ? Icons.upload_file_rounded : Icons.check_circle_rounded,
+                                    color: billPath == null ? const Color(0xFF0D9488) : const Color(0xFF10B981),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    billPath == null ? 'Attach Payment Slip / Receipt (Optional)' : 'Receipt Attached',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: billPath == null ? const Color(0xFF0D9488) : const Color(0xFF059669),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D9488),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setDlgState(() => isSaving = true);
+                                    try {
+                                      final price = double.parse(amountController.text.trim());
+                                      await context.read<ApplianceProvider>().markDuePaid(
+                                        appliance.id,
+                                        amountPaid: price,
+                                        remarks: remarksController.text.trim(),
+                                        paidDate: paidDate,
+                                        billPath: billPath,
+                                      );
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        setState(() {});
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Payment of ₹${price.toStringAsFixed(0)} logged & cycle updated!',
+                                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: const Color(0xFF059669),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to log payment: $e'), backgroundColor: Colors.redAccent),
+                                        );
+                                      }
+                                    } finally {
+                                      setDlgState(() => isSaving = false);
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text('Confirm Paid & Next Cycle', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditApplianceDialog(BuildContext context, Appliance appliance, bool isService) {
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController(text: appliance.name);
+    final brandController = TextEditingController(text: appliance.brand);
+    final serialController = TextEditingController(text: appliance.serialNumber);
+    final dueAmountController = TextEditingController(
+      text: appliance.dueAmount != null ? appliance.dueAmount!.toStringAsFixed(0) : '',
+    );
+    DateTime? warrantyStart = appliance.warrantyStart;
+    DateTime? warrantyEnd = appliance.warrantyEnd;
+    DateTime? nextDueDate = appliance.nextDueDate;
+    String selectedDueFrequency = appliance.dueFrequency ?? 'none';
+    int dueReminderDaysBefore = appliance.dueReminderDaysBefore;
+    bool isDueNotificationEnabled = appliance.isDueNotificationEnabled;
+    bool isSaving = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlgState) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF042F2E), const Color(0xFF134E4A)]
+                              : [const Color(0xFFF0FDFA), const Color(0xFFCCFBF1)],
+                        ),
+                        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF0D9488) : const Color(0xFF99F6E4))),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: const Color(0xFF0D9488),
+                            child: Icon(isService ? Icons.handyman_rounded : Icons.devices_other_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isService ? 'Edit Service & Dues' : 'Edit Appliance & Dues',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isDark ? Colors.white : const Color(0xFF042F2E),
+                                  ),
+                                ),
+                                Text(
+                                  appliance.name,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF0F766E),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black.withAlpha(20),
+                              padding: const EdgeInsets.all(4),
+                              minimumSize: Size.zero,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextFormField(
+                            controller: nameController,
+                            validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                            style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                            decoration: InputDecoration(
+                              labelText: isService ? 'Service Name *' : 'Appliance Name *',
+                              prefixIcon: Icon(isService ? Icons.handyman_rounded : Icons.devices_other_rounded, color: const Color(0xFF0D9488), size: 18),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: brandController,
+                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  decoration: InputDecoration(
+                                    labelText: isService ? 'Provider / Agency' : 'Brand Name',
+                                    prefixIcon: const Icon(Icons.branding_watermark_rounded, color: Color(0xFF0D9488), size: 18),
+                                    filled: true,
+                                    fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: serialController,
+                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  decoration: InputDecoration(
+                                    labelText: isService ? 'Account / ID' : 'Serial Number',
+                                    prefixIcon: const Icon(Icons.numbers_rounded, color: Color(0xFF0D9488), size: 18),
+                                    filled: true,
+                                    fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // Warranty / Cycle dates
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate: warrantyStart ?? DateTime.now(),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (date != null) setDlgState(() => warrantyStart = date);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_rounded, size: 15, color: Color(0xFF0D9488)),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            warrantyStart == null
+                                                ? (isService ? 'Start Date' : 'Warranty Start')
+                                                : DateFormat('dd/MM/yyyy').format(warrantyStart!),
+                                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate: warrantyEnd ?? DateTime.now().add(const Duration(days: 365)),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (date != null) setDlgState(() => warrantyEnd = date);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(isService ? Icons.event_repeat_rounded : Icons.shield_outlined, size: 15, color: const Color(0xFF0D9488)),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            warrantyEnd == null
+                                                ? (isService ? 'Expiry Date' : 'Warranty End')
+                                                : DateFormat('dd/MM/yyyy').format(warrantyEnd!),
+                                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Recurring Due Section
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0FDFA),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: selectedDueFrequency != 'none'
+                                    ? const Color(0xFF0D9488)
+                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFCCFBF1)),
+                                width: selectedDueFrequency != 'none' ? 1.2 : 0.8,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D9488)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Payment Due & Recurring Reminder',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Due Frequency',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _buildFrequencyChip('None', 'none', selectedDueFrequency, (val) {
+                                        setDlgState(() => selectedDueFrequency = val);
+                                      }, isDark),
+                                      const SizedBox(width: 6),
+                                      _buildFrequencyChip('Daily', 'daily', selectedDueFrequency, (val) {
+                                        setDlgState(() {
+                                          selectedDueFrequency = val;
+                                          nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                        });
+                                      }, isDark),
+                                      const SizedBox(width: 6),
+                                      _buildFrequencyChip('Weekly', 'weekly', selectedDueFrequency, (val) {
+                                        setDlgState(() {
+                                          selectedDueFrequency = val;
+                                          nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                        });
+                                      }, isDark),
+                                      const SizedBox(width: 6),
+                                      _buildFrequencyChip('Monthly', 'monthly', selectedDueFrequency, (val) {
+                                        setDlgState(() {
+                                          selectedDueFrequency = val;
+                                          nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                        });
+                                      }, isDark),
+                                      const SizedBox(width: 6),
+                                      _buildFrequencyChip('Quarterly', 'quarterly', selectedDueFrequency, (val) {
+                                        setDlgState(() {
+                                          selectedDueFrequency = val;
+                                          nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                        });
+                                      }, isDark),
+                                      const SizedBox(width: 6),
+                                      _buildFrequencyChip('Yearly', 'yearly', selectedDueFrequency, (val) {
+                                        setDlgState(() {
+                                          selectedDueFrequency = val;
+                                          nextDueDate ??= Appliance.calculateNextDueDate(DateTime.now(), val);
+                                        });
+                                      }, isDark),
+                                    ],
+                                  ),
+                                ),
+                                if (selectedDueFrequency != 'none') ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: dueAmountController,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          style: const TextStyle(fontSize: 13),
+                                          decoration: InputDecoration(
+                                            labelText: 'Due Amount (₹)',
+                                            prefixIcon: const Icon(Icons.currency_rupee_rounded, size: 16, color: Color(0xFF0D9488)),
+                                            filled: true,
+                                            fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final date = await showDatePicker(
+                                              context: context,
+                                              initialDate: nextDueDate ?? DateTime.now(),
+                                              firstDate: DateTime(2020),
+                                              lastDate: DateTime(2100),
+                                            );
+                                            if (date != null) setDlgState(() => nextDueDate = date);
+                                          },
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.event_repeat_rounded, size: 15, color: Color(0xFF0D9488)),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        'Next Due Date',
+                                                        style: TextStyle(fontSize: 9.5, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                                      ),
+                                                      Text(
+                                                        nextDueDate == null ? 'Pick Date' : DateFormat('dd/MM/yyyy').format(nextDueDate!),
+                                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Remind Me',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: [
+                                        _buildReminderTimingChip('On due day', 0, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                        const SizedBox(width: 6),
+                                        _buildReminderTimingChip('1 day before', 1, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                        const SizedBox(width: 6),
+                                        _buildReminderTimingChip('2 days before', 2, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                        const SizedBox(width: 6),
+                                        _buildReminderTimingChip('3 days before', 3, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                        const SizedBox(width: 6),
+                                        _buildReminderTimingChip('7 days before', 7, dueReminderDaysBefore, (d) => setDlgState(() => dueReminderDaysBefore = d), isDark),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D9488),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setDlgState(() => isSaving = true);
+                                    try {
+                                      final dueAmt = double.tryParse(dueAmountController.text.trim());
+                                      final isRecurring = selectedDueFrequency != 'none';
+
+                                      final updated = appliance.copyWith(
+                                        name: nameController.text.trim(),
+                                        brand: brandController.text.trim(),
+                                        serialNumber: serialController.text.trim(),
+                                        warrantyStart: warrantyStart,
+                                        warrantyEnd: warrantyEnd,
+                                        dueFrequency: isRecurring ? selectedDueFrequency : 'none',
+                                        dueAmount: isRecurring ? dueAmt : 0.0,
+                                        nextDueDate: isRecurring
+                                            ? (nextDueDate ?? Appliance.calculateNextDueDate(DateTime.now(), selectedDueFrequency))
+                                            : null,
+                                        dueReminderDaysBefore: dueReminderDaysBefore,
+                                        isDueNotificationEnabled: isRecurring ? isDueNotificationEnabled : false,
+                                      );
+
+                                      await context.read<ApplianceProvider>().addAppliance(updated);
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        setState(() {});
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Details and recurring due schedule updated!'),
+                                            backgroundColor: Color(0xFF059669),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.redAccent),
+                                        );
+                                      }
+                                    } finally {
+                                      setDlgState(() => isSaving = false);
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

@@ -105,6 +105,11 @@ class ApiApplianceRepository implements ApplianceRepository {
         warrantyEnd: appliance.warrantyEnd,
         invoicePath: uploadedPath,
         createdAt: appliance.createdAt,
+        dueFrequency: appliance.dueFrequency,
+        dueAmount: appliance.dueAmount,
+        nextDueDate: appliance.nextDueDate,
+        dueReminderDaysBefore: appliance.dueReminderDaysBefore,
+        isDueNotificationEnabled: appliance.isDueNotificationEnabled,
       );
 
       final currentList = await getAppliances();

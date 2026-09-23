@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/appliance_model.dart';
 import '../repositories/appliance_repository.dart';
+import '../services/notification_service.dart';
 
 class ApplianceProvider with ChangeNotifier {
   final ApplianceRepository _repository;
@@ -14,6 +15,17 @@ class ApplianceProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   List<Appliance> get appliances => _appliances;
 
+  List<Appliance> get dueAppliances =>
+      _appliances.where((a) => a.isRecurringDueActive).toList();
+
+  List<Appliance> get pendingOrOverdueAppliances {
+    return _appliances.where((a) {
+      if (!a.isRecurringDueActive) return false;
+      final status = a.dueStatus;
+      return status == 'overdue' || status == 'due_today' || status == 'due_soon';
+    }).toList();
+  }
+
   Future<void> loadAppliances({bool setLoader = true}) async {
     if (setLoader) {
       _isLoading = true;
@@ -21,6 +33,8 @@ class ApplianceProvider with ChangeNotifier {
     }
     try {
       _appliances = await _repository.getAppliances();
+      // Sync active notifications in background
+      NotificationService().rescheduleAll(_appliances);
     } finally {
       if (setLoader) {
         _isLoading = false;
@@ -34,6 +48,7 @@ class ApplianceProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _repository.saveAppliance(appliance);
+      await NotificationService().scheduleApplianceDueNotification(appliance);
       await loadAppliances(setLoader: false);
     } finally {
       _isLoading = false;
@@ -46,10 +61,47 @@ class ApplianceProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _repository.deleteAppliance(id);
+      await NotificationService().cancelApplianceNotification(id);
       await loadAppliances(setLoader: false);
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> markDuePaid(
+    String applianceId, {
+    double? amountPaid,
+    String? remarks,
+    DateTime? paidDate,
+    String? billPath,
+  }) async {
+    final index = _appliances.indexWhere((a) => a.id == applianceId);
+    if (index == -1) return;
+
+    final appliance = _appliances[index];
+    final date = paidDate ?? DateTime.now();
+    final cost = amountPaid ?? appliance.dueAmount ?? 0.0;
+    final note = remarks ??
+        '${appliance.dueFrequency != null ? appliance.dueFrequency!.toUpperCase() : ""} Due Payment cleared';
+
+    // 1. Record service log
+    final record = ServiceRecord(
+      id: '${appliance.id}_srv_${DateTime.now().millisecondsSinceEpoch}',
+      applianceId: appliance.id,
+      serviceDate: date,
+      price: cost,
+      remarks: note,
+      billPath: billPath,
+      createdAt: DateTime.now(),
+    );
+    await addServiceRecord(record);
+
+    // 2. Advance next due date to next cycle if recurring
+    if (appliance.isRecurringDueActive) {
+      final updatedNextDue = appliance.getNextCycleDueDate(appliance.nextDueDate ?? date);
+      final updatedAppliance = appliance.copyWith(nextDueDate: updatedNextDue);
+      await addAppliance(updatedAppliance);
     }
   }
 
