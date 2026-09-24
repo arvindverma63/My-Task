@@ -131,21 +131,48 @@ class Appliance {
   }
 
   factory Appliance.fromMap(Map<String, dynamic> map) {
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final notifVal = map['isDueNotificationEnabled'];
+    final bool isDueNotificationEnabled = notifVal == null
+        ? true
+        : (notifVal is bool
+            ? notifVal
+            : (notifVal == 1 || notifVal == '1' || notifVal.toString().toLowerCase() == 'true'));
+
+    final reminderVal = map['dueReminderDaysBefore'];
+    final int dueReminderDaysBefore = reminderVal is int
+        ? reminderVal
+        : (int.tryParse(reminderVal?.toString() ?? '') ?? 1);
+
+    final dueAmtVal = map['dueAmount'];
+    final double? dueAmount = dueAmtVal != null ? double.tryParse(dueAmtVal.toString()) : null;
+
+    final freqVal = map['dueFrequency']?.toString();
+    final String? dueFrequency = (freqVal != null && freqVal.isNotEmpty && freqVal != 'null') ? freqVal : null;
+
     return Appliance(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      type: map['type'] ?? '',
-      brand: map['brand'] ?? '',
-      serialNumber: map['serialNumber'] ?? '',
-      warrantyStart: map['warrantyStart'] != null ? DateTime.parse(map['warrantyStart']) : null,
-      warrantyEnd: map['warrantyEnd'] != null ? DateTime.parse(map['warrantyEnd']) : null,
-      invoicePath: map['invoicePath'],
-      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : DateTime.now(),
-      dueFrequency: map['dueFrequency'],
-      dueAmount: map['dueAmount'] != null ? (double.tryParse(map['dueAmount'].toString()) ?? 0.0) : null,
-      nextDueDate: map['nextDueDate'] != null ? DateTime.parse(map['nextDueDate']) : null,
-      dueReminderDaysBefore: map['dueReminderDaysBefore'] is int ? map['dueReminderDaysBefore'] : 1,
-      isDueNotificationEnabled: map['isDueNotificationEnabled'] ?? true,
+      id: map['id']?.toString() ?? '',
+      name: map['name']?.toString() ?? '',
+      type: map['type']?.toString() ?? '',
+      brand: map['brand']?.toString() ?? '',
+      serialNumber: map['serialNumber']?.toString() ?? '',
+      warrantyStart: parseDate(map['warrantyStart']),
+      warrantyEnd: parseDate(map['warrantyEnd']),
+      invoicePath: map['invoicePath']?.toString(),
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
+      dueFrequency: dueFrequency,
+      dueAmount: dueAmount,
+      nextDueDate: parseDate(map['nextDueDate']),
+      dueReminderDaysBefore: dueReminderDaysBefore,
+      isDueNotificationEnabled: isDueNotificationEnabled,
     );
   }
 
@@ -186,14 +213,26 @@ class ServiceRecord {
   }
 
   factory ServiceRecord.fromMap(Map<String, dynamic> map) {
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final priceVal = map['price'];
+    final double price = priceVal != null ? (double.tryParse(priceVal.toString()) ?? 0.0) : 0.0;
+
     return ServiceRecord(
-      id: map['id'] ?? '',
-      applianceId: map['applianceId'] ?? '',
-      serviceDate: map['serviceDate'] != null ? DateTime.parse(map['serviceDate']) : DateTime.now(),
-      price: map['price'] != null ? (double.tryParse(map['price'].toString()) ?? 0.0) : 0.0,
-      remarks: map['remarks'] ?? '',
-      billPath: map['billPath'],
-      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : DateTime.now(),
+      id: map['id']?.toString() ?? '',
+      applianceId: map['applianceId']?.toString() ?? '',
+      serviceDate: parseDate(map['serviceDate']) ?? DateTime.now(),
+      price: price,
+      remarks: map['remarks']?.toString() ?? '',
+      billPath: map['billPath']?.toString(),
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
     );
   }
 

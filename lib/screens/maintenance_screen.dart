@@ -2315,31 +2315,39 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0D9488).withAlpha(isDark ? 40 : 20),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D9488).withAlpha(isDark ? 40 : 20),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.notifications_active_rounded, color: Color(0xFF0D9488), size: 16),
                           ),
-                          child: const Icon(Icons.notifications_active_rounded, color: Color(0xFF0D9488), size: 16),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Payment Due & Recurring Reminder',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Payment Due & Reminder',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    if (appliance.isRecurringDueActive)
+                    if (appliance.isRecurringDueActive) ...[
+                      const SizedBox(width: 6),
                       _buildDueStatusBadge(appliance, isDark),
+                    ],
                   ],
                 ),
                 Divider(height: 18, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
@@ -2457,12 +2465,16 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                       child: Icon(isService ? Icons.handyman_rounded : Icons.devices_other_rounded, color: const Color(0xFF0D9488), size: 16),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      isService ? 'Service & Provider Details' : 'Device Specifications',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    Expanded(
+                      child: Text(
+                        isService ? 'Service & Provider Details' : 'Device Specifications',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -2501,38 +2513,45 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: (!hasWarranty
-                                    ? Colors.grey
-                                    : (isExpired ? const Color(0xFFEF4444) : const Color(0xFF10B981)))
-                                .withAlpha(isDark ? 40 : 20),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: (!hasWarranty
+                                      ? Colors.grey
+                                      : (isExpired ? const Color(0xFFEF4444) : const Color(0xFF10B981)))
+                                  .withAlpha(isDark ? 40 : 20),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isService ? Icons.event_repeat_rounded : Icons.shield_rounded,
+                              color: !hasWarranty
+                                  ? Colors.grey
+                                  : (isExpired ? const Color(0xFFEF4444) : const Color(0xFF10B981)),
+                              size: 16,
+                            ),
                           ),
-                          child: Icon(
-                            isService ? Icons.event_repeat_rounded : Icons.shield_rounded,
-                            color: !hasWarranty
-                                ? Colors.grey
-                                : (isExpired ? const Color(0xFFEF4444) : const Color(0xFF10B981)),
-                            size: 16,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              isService ? 'Service Validity & Cycle' : 'Warranty Coverage',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isService ? 'Service Validity & Cycle' : 'Warranty Coverage',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     _buildWarrantyStatusBadge(hasWarranty, isExpired, daysRemaining, isDark, isService),
                   ],
                 ),
@@ -2894,10 +2913,15 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isService ? 'Refills & Service Timeline' : 'Service Logs Timeline',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+              Expanded(
+                child: Text(
+                  isService ? 'Refills & Service Timeline' : 'Service Logs Timeline',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0D9488),

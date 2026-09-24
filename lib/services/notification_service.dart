@@ -81,80 +81,84 @@ class NotificationService {
   }
 
   Future<void> scheduleApplianceDueNotification(Appliance appliance) async {
-    if (!_isInitialized) await init();
+    try {
+      if (!_isInitialized) await init();
 
-    final notifId = _generateNotificationId(appliance.id);
-    await _notificationsPlugin.cancel(notifId);
+      final notifId = _generateNotificationId(appliance.id);
+      try {
+        await _notificationsPlugin.cancel(notifId);
+      } catch (e) {
+        debugPrint('Safe ignore - error cancelling previous notification: $e');
+      }
 
-    if (!appliance.isDueNotificationEnabled ||
-        appliance.dueFrequency == null ||
-        appliance.dueFrequency == 'none' ||
-        appliance.nextDueDate == null) {
-      return;
-    }
-
-    final dueDate = appliance.nextDueDate!;
-    final reminderDays = appliance.dueReminderDaysBefore;
-
-    // Scheduled time: 9:00 AM on (dueDate - reminderDays)
-    final targetDate = dueDate.subtract(Duration(days: reminderDays));
-    DateTime scheduledDateTime = DateTime(
-      targetDate.year,
-      targetDate.month,
-      targetDate.day,
-      9,
-      0,
-    );
-
-    final now = DateTime.now();
-    if (scheduledDateTime.isBefore(now)) {
-      if (dueDate.isAfter(now)) {
-        scheduledDateTime = now.add(const Duration(minutes: 5));
-      } else {
-        // Due date is in the past; no forward schedule
+      if (!appliance.isDueNotificationEnabled ||
+          appliance.dueFrequency == null ||
+          appliance.dueFrequency == 'none' ||
+          appliance.nextDueDate == null) {
         return;
       }
-    }
 
-    final tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
+      final dueDate = appliance.nextDueDate!;
+      final reminderDays = appliance.dueReminderDaysBefore;
 
-    final currencyFmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    final amountStr = appliance.dueAmount != null && appliance.dueAmount! > 0
-        ? ' of ${currencyFmt.format(appliance.dueAmount)}'
-        : '';
-    final frequencyLabel = appliance.dueFrequency != null && appliance.dueFrequency != 'none'
-        ? ' (${appliance.dueFrequency!.toUpperCase()})'
-        : '';
+      // Scheduled time: 9:00 AM on (dueDate - reminderDays)
+      final targetDate = dueDate.subtract(Duration(days: reminderDays));
+      DateTime scheduledDateTime = DateTime(
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+        9,
+        0,
+      );
 
-    String bodyText;
-    if (reminderDays == 0) {
-      bodyText = 'Payment$amountStr is due TODAY for ${appliance.name}$frequencyLabel.';
-    } else {
-      bodyText = 'Payment$amountStr for ${appliance.name}$frequencyLabel is due in $reminderDays day${reminderDays > 1 ? "s" : ""} on ${DateFormat("d MMM yyyy").format(dueDate)}.';
-    }
+      final now = DateTime.now();
+      if (scheduledDateTime.isBefore(now)) {
+        if (dueDate.isAfter(now)) {
+          scheduledDateTime = now.add(const Duration(minutes: 5));
+        } else {
+          // Due date is in the past; no forward schedule
+          return;
+        }
+      }
 
-    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'appliance_dues_channel',
-      'Appliance & Utility Due Reminders',
-      channelDescription: 'Notifications for upcoming and due appliance services and utility bills',
-      importance: Importance.high,
-      priority: Priority.high,
-      styleInformation: BigTextStyleInformation(bodyText),
-      icon: '@mipmap/launcher_icon',
-    );
+      final tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
 
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+      final currencyFmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+      final amountStr = appliance.dueAmount != null && appliance.dueAmount! > 0
+          ? ' of ${currencyFmt.format(appliance.dueAmount)}'
+          : '';
+      final frequencyLabel = appliance.dueFrequency != null && appliance.dueFrequency != 'none'
+          ? ' (${appliance.dueFrequency!.toUpperCase()})'
+          : '';
 
-    final NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+      String bodyText;
+      if (reminderDays == 0) {
+        bodyText = 'Payment$amountStr is due TODAY for ${appliance.name}$frequencyLabel.';
+      } else {
+        bodyText = 'Payment$amountStr for ${appliance.name}$frequencyLabel is due in $reminderDays day${reminderDays > 1 ? "s" : ""} on ${DateFormat("d MMM yyyy").format(dueDate)}.';
+      }
 
-    try {
+      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'appliance_dues_channel',
+        'Appliance & Utility Due Reminders',
+        channelDescription: 'Notifications for upcoming and due appliance services and utility bills',
+        importance: Importance.high,
+        priority: Priority.high,
+        styleInformation: BigTextStyleInformation(bodyText),
+        icon: '@mipmap/launcher_icon',
+      );
+
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
       await _notificationsPlugin.zonedSchedule(
         notifId,
         '🔔 Due Reminder: ${appliance.name}',
@@ -167,19 +171,27 @@ class NotificationService {
       );
       debugPrint('Scheduled notification for ${appliance.name} at $tzScheduledTime (ID: $notifId)');
     } catch (e) {
-      debugPrint('Error scheduling notification: $e');
+      debugPrint('Safe ignore - error scheduling notification: $e');
     }
   }
 
   Future<void> cancelApplianceNotification(String applianceId) async {
-    if (!_isInitialized) await init();
-    final notifId = _generateNotificationId(applianceId);
-    await _notificationsPlugin.cancel(notifId);
+    try {
+      if (!_isInitialized) await init();
+      final notifId = _generateNotificationId(applianceId);
+      await _notificationsPlugin.cancel(notifId);
+    } catch (e) {
+      debugPrint('Safe ignore - error cancelling notification for $applianceId: $e');
+    }
   }
 
   Future<void> rescheduleAll(List<Appliance> appliances) async {
-    for (final appliance in appliances) {
-      await scheduleApplianceDueNotification(appliance);
+    try {
+      for (final appliance in appliances) {
+        await scheduleApplianceDueNotification(appliance);
+      }
+    } catch (e) {
+      debugPrint('Safe ignore - error rescheduling all notifications: $e');
     }
   }
 }

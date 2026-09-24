@@ -48,7 +48,11 @@ class ApplianceProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _repository.saveAppliance(appliance);
-      await NotificationService().scheduleApplianceDueNotification(appliance);
+      try {
+        await NotificationService().scheduleApplianceDueNotification(appliance);
+      } catch (e) {
+        debugPrint('Safe notification schedule ignore: $e');
+      }
       await loadAppliances(setLoader: false);
     } finally {
       _isLoading = false;
@@ -61,7 +65,11 @@ class ApplianceProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _repository.deleteAppliance(id);
-      await NotificationService().cancelApplianceNotification(id);
+      try {
+        await NotificationService().cancelApplianceNotification(id);
+      } catch (e) {
+        debugPrint('Safe notification cancel ignore: $e');
+      }
       await loadAppliances(setLoader: false);
     } finally {
       _isLoading = false;

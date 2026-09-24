@@ -83,10 +83,11 @@ class ApiApplianceRepository implements ApplianceRepository {
       _checkResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> list = json.decode(response.body);
-        return list.map((item) => Appliance.fromMap(item)).toList();
+        return list.map((item) => Appliance.fromMap(item as Map<String, dynamic>)).toList();
       }
     } catch (e) {
-      // Log error
+      // ignore: avoid_print
+      print('ApiApplianceRepository.getAppliances error: $e');
     }
     return [];
   }
@@ -133,8 +134,19 @@ class ApiApplianceRepository implements ApplianceRepository {
             );
 
       _checkResponse(response);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        try {
+          final errData = json.decode(response.body);
+          throw Exception(errData['error'] ?? 'Server error (${response.statusCode})');
+        } catch (_) {
+          throw Exception('Server error (${response.statusCode})');
+        }
+      }
     } catch (e) {
-      // Log error
+      // ignore: avoid_print
+      print('ApiApplianceRepository.saveAppliance error: $e');
+      rethrow;
     }
   }
 
