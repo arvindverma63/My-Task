@@ -388,6 +388,7 @@ Any future modifications must strictly adhere to the following build gates:
 - ✅ **Executive 2x2 Square Grid Dashboard (v1.1.0)**: Redesigned `MainDashboardScreen` into a clean, modern 2x2 square grid featuring 4 large centered vector illustration tiles (Helper Attendance, Ironing & Laundry, Appliances & Services, Reports & Settings) with minimal text, zero clutter, and fast 1-tap navigation.
 - ✅ **Employee Report Cleanup**: Removed the Export PDF button and related dependencies from `EmployeeReportScreen` for a streamlined digital ledger view.
 - ✅ **Settings Screen Cleanup**: Removed unused toggles (`Compact Mode`, `Show Timestamps`) and `Renew App (Fresh Seed)` reset dialogs from `ThemeSettingsScreen` and `MainDashboardScreen`.
+- ✅ **Professional Typography Overhaul**: Integrated `google_fonts` with **Plus Jakarta Sans** across all light and dark themes app-wide for clean, modern, executive mobile aesthetics.
 
 ### 8.2 Future Planned Roadmap (Backlog for Future Updates)
 - [ ] **Offline Sync Queue**: Implement local SQLite queue that automatically pushes mutations to the cloud when internet connection is restored.

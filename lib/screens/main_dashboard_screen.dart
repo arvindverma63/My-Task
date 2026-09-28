@@ -608,8 +608,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                         Text(
                           '${_getGreeting()}, $_username',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           ),
                           maxLines: 1,
@@ -681,7 +681,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF10B981).withAlpha(isDark ? 35 : 20),
@@ -700,7 +700,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                     'MANAGEMENT OPTIONS',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w900,
                                       letterSpacing: 0.8,
                                       color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
                                     ),
@@ -711,8 +711,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             Text(
                               'Household Management',
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
                                 letterSpacing: -0.4,
                                 color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
@@ -721,8 +721,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             Text(
                               'Select an option below to manage your home records',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
                                 color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                               ),
                             ),
@@ -794,7 +794,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                     height: cardHeight,
                                     child: _buildSquareTile(
                                       title: 'Reports & Settings',
-                                      countBadge: 'PDF & Sync',
+                                      countBadge: 'Settings & Tour',
                                       accentColor: const Color(0xFFF59E0B),
                                       vectorArt: const ReportsSettingsVectorArt(size: 68),
                                       isDark: isDark,
@@ -884,9 +884,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
                 maxLines: 1,
@@ -904,8 +904,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 child: Text(
                   countBadge,
                   style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                     color: accentColor,
                   ),
                 ),

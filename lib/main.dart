@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
@@ -36,9 +37,28 @@ class MyApp extends StatelessWidget {
       brightness: brightness,
     );
 
+    final baseTextTheme = brightness == Brightness.light
+        ? Typography.material2021().black
+        : Typography.material2021().white;
+
+    final customTextTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme).copyWith(
+      headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+      headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, letterSpacing: -0.4),
+      headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, letterSpacing: -0.3),
+      titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+      titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      titleSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+      bodyLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
+      bodyMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
+      bodySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
+      labelLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      labelMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+      labelSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+    );
+
     return ThemeData(
       useMaterial3: true,
-      fontFamily: 'Roboto',
+      textTheme: customTextTheme,
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: brightness == Brightness.light
