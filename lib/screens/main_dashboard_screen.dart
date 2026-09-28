@@ -6,7 +6,6 @@ import 'employee_management_screen.dart';
 import 'ironing_dashboard_screen.dart';
 import 'maintenance_screen.dart';
 import 'theme_settings_screen.dart';
-import 'employee_report_screen.dart';
 import 'user_profile_screen.dart';
 import 'onboarding_screen.dart';
 
@@ -34,6 +33,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   String? _userId;
   String _username = 'User';
   String? _profilePic;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -49,7 +49,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       } else if (widget.initialIndex == 3) {
         _navigateTo(ThemeSettingsScreen(
           onStartTour: _showTourGuideDialog,
-          onRenewApp: _showRenewVerificationStep1,
         ));
       }
     });
@@ -106,6 +105,49 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     }
   }
 
+  Future<void> _handleManualSync() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isRefreshing = true);
+    try {
+      await Future.wait([
+        context.read<EmployeeProvider>().refreshData(),
+        context.read<ApplianceProvider>().loadAppliances(),
+      ]);
+      await _loadSession();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Data synchronized!'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
   void _navigateTo(Widget screen) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
@@ -113,48 +155,91 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     ).then((_) => _loadSession());
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon';
+    } else if (hour >= 17 && hour < 22) {
+      return 'Good Evening';
+    } else {
+      return 'Welcome';
+    }
+  }
+
   Widget _buildGuestBanner() {
     if (!_isGuest) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.orange.shade800,
-      child: SafeArea(
-        bottom: false,
-        top: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          child: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Guest Mode: $_guestDaysRemaining days left on trial',
-                  style: const TextStyle(
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFD97706), Color(0xFFB45309)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD97706).withAlpha(60),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(50),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '30-Day Free Guest Trial',
+                  style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: _showUpgradeAccountDialog,
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.orange.shade900,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                Text(
+                  '$_guestDaysRemaining days left • Upgrade to save data permanently',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(220),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                child: const Text(
-                  'Upgrade',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          FilledButton(
+            onPressed: _showUpgradeAccountDialog,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFFB45309),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text(
+              'Upgrade',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -427,140 +512,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
-  void _showRenewVerificationStep1() {
-    final colorScheme = Theme.of(context).colorScheme;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_rounded, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Text('Reset & Renew App', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text(
-          'This will permanently delete all your domestic helpers, ironing logs, payments, and appliance data, and reload the fresh sample data.',
-          style: TextStyle(fontSize: 12.5, height: 1.3),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showRenewVerificationStep2();
-            },
-            style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
-            child: const Text('Proceed'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showRenewVerificationStep2() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final verifyController = TextEditingController();
-    bool isButtonEnabled = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          title: Row(
-            children: [
-              Icon(Icons.lock_person_rounded, color: colorScheme.primary, size: 22),
-              SizedBox(width: 8),
-              const Text('Verify Reset', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Type "RENEW" to confirm reset:',
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: verifyController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Type RENEW',
-                  hintText: 'RENEW',
-                ),
-                onChanged: (val) {
-                  setDlgState(() {
-                    isButtonEnabled = val.trim().toUpperCase() == 'RENEW';
-                  });
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: isButtonEnabled
-                  ? () async {
-                      Navigator.pop(context);
-                      await _renewAppAndShowTour();
-                    }
-                  : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: isButtonEnabled ? colorScheme.error : Colors.grey,
-              ),
-              child: const Text('Confirm Renewal'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _renewAppAndShowTour() async {
-    final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
-    final applianceProvider = Provider.of<ApplianceProvider>(context, listen: false);
-
-    // 1. Clear all data
-    await employeeProvider.clearAllData();
-    final appliances = List<Appliance>.from(applianceProvider.appliances);
-    for (final app in appliances) {
-      await applianceProvider.deleteAppliance(app.id);
-    }
-
-    // 2. Re-seed sample data
-    await _seedSampleData();
-
-    // 3. Mark first launch completed
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_first_launch_v2', false);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('App renewed successfully! Sample data has been re-seeded.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -571,454 +522,297 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     final workersCount = employeeProvider.ironingWorkers.length;
     final appliancesCount = applianceProvider.appliances.length;
 
-    // Active warranties count
-    final now = DateTime.now();
-    final activeWarranties = applianceProvider.appliances.where((a) {
-      return a.warrantyEnd != null && a.warrantyEnd!.isAfter(now);
-    }).length;
-
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-      body: Column(
-        children: [
-          _buildGuestBanner(),
-          Expanded(
-            child: RefreshIndicator(
-              color: const Color(0xFF10B981),
-              onRefresh: () async {
-                await Future.wait([
-                  context.read<EmployeeProvider>().refreshData(),
-                  context.read<ApplianceProvider>().loadAppliances(),
-                ]);
-                await _loadSession();
-              },
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                slivers: [
-                  // 1. Executive Top Bar Header
-                  SliverToBoxAdapter(
-                    child: SafeArea(
-                      bottom: false,
-                      top: !_isGuest,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        child: Row(
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Column(
+          children: [
+            _buildGuestBanner(),
+            // 1. Header Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF047857)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withAlpha(70),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.task_alt_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
                           children: [
-                            // App Logo Badge
+                            Text(
+                              'My-Task',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
                             Container(
-                              width: 40,
-                              height: 40,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF10B981), Color(0xFF059669)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                                color: _isGuest
+                                    ? Colors.amber.withAlpha(isDark ? 40 : 25)
+                                    : const Color(0xFF10B981).withAlpha(isDark ? 40 : 25),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: _isGuest ? Colors.amber.shade700 : const Color(0xFF10B981),
+                                  width: 0.8,
                                 ),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF10B981).withAlpha(80),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
                               ),
-                              child: const Icon(
-                                Icons.task_alt_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'My-Task',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.4,
-                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                        decoration: BoxDecoration(
-                                          color: _isGuest
-                                              ? Colors.amber.withAlpha(isDark ? 40 : 25)
-                                              : const Color(0xFF10B981).withAlpha(isDark ? 40 : 25),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: _isGuest ? Colors.amber.shade700 : const Color(0xFF10B981),
-                                            width: 0.8,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _isGuest ? 'Guest Trial' : 'Active',
-                                          style: TextStyle(
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: _isGuest
-                                                ? (isDark ? Colors.amber.shade300 : Colors.amber.shade900)
-                                                : const Color(0xFF10B981),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Household Management Hub',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // User Profile Avatar Shortcut
-                            GestureDetector(
-                              onTap: () => _navigateTo(const UserProfileScreen()),
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFF10B981).withAlpha(120),
-                                    width: 1.8,
-                                  ),
+                              child: Text(
+                                _isGuest ? 'Guest Trial' : 'Active',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _isGuest
+                                      ? (isDark ? Colors.amber.shade300 : Colors.amber.shade900)
+                                      : const Color(0xFF10B981),
                                 ),
-                                child: _buildAvatarCircle(radius: 18),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 1),
+                        Text(
+                          '${_getGreeting()}, $_username',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-
-                  // 2. Welcome Greeting & Quick Metrics Banner
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isDark
-                                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                                : [const Color(0xFFFFFFFF), const Color(0xFFF1F5F9)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                  IconButton(
+                    onPressed: _isRefreshing ? null : _handleManualSync,
+                    icon: _isRefreshing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+                          )
+                        : Icon(
+                            Icons.sync_rounded,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            size: 22,
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(isDark ? 30 : 6),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Namaste, $_username 👋',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Select a module',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Summary Pill Metrics Bar
-                            Row(
-                              children: [
-                                _buildSummaryMetric(
-                                  icon: Icons.people_alt_rounded,
-                                  value: '$helpersCount',
-                                  label: 'Helpers',
-                                  color: const Color(0xFF10B981),
-                                  isDark: isDark,
-                                ),
-                                const SizedBox(width: 6),
-                                _buildSummaryMetric(
-                                  icon: Icons.iron_rounded,
-                                  value: '$workersCount',
-                                  label: 'Dhobis',
-                                  color: const Color(0xFF6366F1),
-                                  isDark: isDark,
-                                ),
-                                const SizedBox(width: 6),
-                                _buildSummaryMetric(
-                                  icon: Icons.propane_tank_rounded,
-                                  value: '$appliancesCount',
-                                  label: 'Assets',
-                                  color: const Color(0xFF0D9488),
-                                  isDark: isDark,
-                                ),
-                                const SizedBox(width: 6),
-                                _buildSummaryMetric(
-                                  icon: Icons.security_rounded,
-                                  value: '$activeWarranties',
-                                  label: 'Active',
-                                  color: const Color(0xFFF59E0B),
-                                  isDark: isDark,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                    tooltip: 'Sync Data',
+                    style: IconButton.styleFrom(
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      padding: const EdgeInsets.all(8),
                     ),
                   ),
-
-                  // 3. Section Title
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.dashboard_customize_rounded, size: 16, color: Color(0xFF10B981)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'MAIN MODULES (मुख्य विकल्प)',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                            ),
-                          ),
-                        ],
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => _navigateTo(const UserProfileScreen()),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF10B981),
+                          width: 1.8,
+                        ),
                       ),
-                    ),
-                  ),
-
-                  // 4. The 4 Main Redirection Cards
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        // Option 1: Attendance Register
-                        _buildMainOptionCard(
-                          title: 'Helper Attendance & Salary',
-                          hindiTitle: 'कामवाली / हेल्पर अटेंडेंस व पगार',
-                          subtitle: '1-tap Present / Absent tracking, advance payouts, and automatic monthly wage calculations.',
-                          badgeText: '$helpersCount Helpers Active',
-                          accentColor: const Color(0xFF10B981),
-                          gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-                          icon: Icons.people_alt_rounded,
-                          vectorArt: const AttendanceVectorArt(size: 78),
-                          isDark: isDark,
-                          onTap: () => _navigateTo(const EmployeeManagementScreen()),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Option 2: Ironing & Dhobi Tracker
-                        _buildMainOptionCard(
-                          title: 'Ironing & Dhobi Registry',
-                          hindiTitle: 'धोबी / इस्त्री का हिसाब व रेट कार्ड',
-                          subtitle: 'Batch garment counter by size (S, M, L, XL), customizable rate cards, and vendor balance ledger.',
-                          badgeText: workersCount > 0 ? '$workersCount Dhobis Active' : 'Add First Worker',
-                          accentColor: const Color(0xFF6366F1),
-                          gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
-                          icon: Icons.iron_rounded,
-                          vectorArt: const IroningVectorArt(size: 78),
-                          isDark: isDark,
-                          onTap: () => _navigateTo(const IroningDashboardScreen()),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Option 3: Services & Appliances Hub
-                        _buildMainOptionCard(
-                          title: 'Appliances & Home Services',
-                          hindiTitle: 'घरेलू उपकरण, गैस सिलिंडर व सर्विस',
-                          subtitle: 'LPG cylinder refills, drinking water delivery, AC service, warranties & invoice records.',
-                          badgeText: '$appliancesCount Items • $activeWarranties Active',
-                          accentColor: const Color(0xFF0D9488),
-                          gradient: const [Color(0xFF0D9488), Color(0xFF0F766E)],
-                          icon: Icons.propane_tank_rounded,
-                          vectorArt: const ApplianceVectorArt(size: 78),
-                          isDark: isDark,
-                          onTap: () => _navigateTo(const MaintenanceScreen()),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Option 4: Reports, Backup & Settings
-                        _buildMainOptionCard(
-                          title: 'PDF Reports & App Settings',
-                          hindiTitle: 'रिपोर्ट्स, बैकअप व सेटिंग्स',
-                          subtitle: 'Download monthly attendance salary slips, manage cloud backup, profile, and dark mode.',
-                          badgeText: 'Reports & Sync',
-                          accentColor: const Color(0xFFF59E0B),
-                          gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-                          icon: Icons.settings_rounded,
-                          vectorArt: const ReportsSettingsVectorArt(size: 78),
-                          isDark: isDark,
-                          onTap: () => _navigateTo(ThemeSettingsScreen(
-                            onStartTour: _showTourGuideDialog,
-                            onRenewApp: _showRenewVerificationStep1,
-                          )),
-                        ),
-                        const SizedBox(height: 18),
-
-                        // Quick Action Shortcuts Bar
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.bolt_rounded, color: Color(0xFFF59E0B), size: 16),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'QUICK SHORTCUTS',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildQuickButton(
-                                      icon: Icons.analytics_rounded,
-                                      label: 'Full Report',
-                                      color: const Color(0xFF10B981),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(const EmployeeReportScreen()),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildQuickButton(
-                                      icon: Icons.explore_rounded,
-                                      label: 'Guided Tour',
-                                      color: const Color(0xFF6366F1),
-                                      isDark: isDark,
-                                      onTap: _showTourGuideDialog,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildQuickButton(
-                                      icon: Icons.person_rounded,
-                                      label: 'Profile',
-                                      color: const Color(0xFF0D9488),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(const UserProfileScreen()),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: MediaQuery.paddingOf(context).bottom + 28),
-                      ]),
+                      child: _buildAvatarCircle(radius: 17),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildSummaryMetric({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: color.withAlpha(isDark ? 28 : 16),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withAlpha(45), width: 0.8),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 12, color: color),
-                const SizedBox(width: 3),
-                Flexible(
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            // 2. The 4 Squares 2x2 Clean Professional Grid (Top-Aligned & Naturally Proportioned)
+            Expanded(
+              child: RefreshIndicator(
+                color: const Color(0xFF10B981),
+                backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                onRefresh: () async {
+                  await Future.wait([
+                    context.read<EmployeeProvider>().refreshData(),
+                    context.read<ApplianceProvider>().loadAppliances(),
+                  ]);
+                  await _loadSession();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Options Section Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                              margin: const EdgeInsets.only(bottom: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withAlpha(isDark ? 35 : 20),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981).withAlpha(60),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.grid_view_rounded, size: 12, color: Color(0xFF10B981)),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'MANAGEMENT OPTIONS',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              'Household Management',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Select an option below to manage your home records',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // 2x2 Grid Layout
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          const spacing = 12.0;
+                          final cardWidth = (constraints.maxWidth - spacing) / 2;
+                          final cardHeight = cardWidth * 1.08;
+
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  // Square 1: Helper Attendance
+                                  SizedBox(
+                                    width: cardWidth,
+                                    height: cardHeight,
+                                    child: _buildSquareTile(
+                                      title: 'Helper Attendance',
+                                      countBadge: '$helpersCount ${helpersCount == 1 ? "Helper" : "Helpers"}',
+                                      accentColor: const Color(0xFF10B981),
+                                      vectorArt: const AttendanceVectorArt(size: 68),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(const EmployeeManagementScreen()),
+                                    ),
+                                  ),
+                                  const SizedBox(width: spacing),
+                                  // Square 2: Ironing & Laundry
+                                  SizedBox(
+                                    width: cardWidth,
+                                    height: cardHeight,
+                                    child: _buildSquareTile(
+                                      title: 'Ironing & Laundry',
+                                      countBadge: '$workersCount ${workersCount == 1 ? "Worker" : "Workers"}',
+                                      accentColor: const Color(0xFF6366F1),
+                                      vectorArt: const IroningVectorArt(size: 68),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(const IroningDashboardScreen()),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: spacing),
+                              Row(
+                                children: [
+                                  // Square 3: Appliances & Services
+                                  SizedBox(
+                                    width: cardWidth,
+                                    height: cardHeight,
+                                    child: _buildSquareTile(
+                                      title: 'Appliances & Services',
+                                      countBadge: '$appliancesCount ${appliancesCount == 1 ? "Item" : "Items"}',
+                                      accentColor: const Color(0xFF0D9488),
+                                      vectorArt: const ApplianceVectorArt(size: 68),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(const MaintenanceScreen()),
+                                    ),
+                                  ),
+                                  const SizedBox(width: spacing),
+                                  // Square 4: Reports & Settings
+                                  SizedBox(
+                                    width: cardWidth,
+                                    height: cardHeight,
+                                    child: _buildSquareTile(
+                                      title: 'Reports & Settings',
+                                      countBadge: 'PDF & Sync',
+                                      accentColor: const Color(0xFFF59E0B),
+                                      vectorArt: const ReportsSettingsVectorArt(size: 68),
+                                      isDark: isDark,
+                                      onTap: () => _navigateTo(ThemeSettingsScreen(
+                                        onStartTour: _showTourGuideDialog,
+                                      )),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 1),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1026,208 +820,94 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
-  Widget _buildMainOptionCard({
+  Widget _buildSquareTile({
     required String title,
-    required String hindiTitle,
-    required String subtitle,
-    required String badgeText,
+    required String countBadge,
     required Color accentColor,
-    required List<Color> gradient,
-    required IconData icon,
     required Widget vectorArt,
     required bool isDark,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        splashColor: accentColor.withAlpha(25),
-        highlightColor: accentColor.withAlpha(15),
+        borderRadius: BorderRadius.circular(20),
+        splashColor: accentColor.withAlpha(35),
+        highlightColor: accentColor.withAlpha(18),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1,
+              width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: accentColor.withAlpha(isDark ? 20 : 12),
+                color: isDark ? Colors.black.withAlpha(50) : accentColor.withAlpha(14),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Vector Art Visual Thumbnail
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: accentColor.withAlpha(isDark ? 30 : 18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accentColor.withAlpha(50)),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: vectorArt,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Card Text Details
+              // Vector Illustration in seamless soft background
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Badge row
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: accentColor.withAlpha(isDark ? 40 : 20),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              hindiTitle,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                color: accentColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            badgeText,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-
-                    // Title
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.2,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-
-                    // Subtitle
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        height: 1.3,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Action Arrow Link
-                    Row(
-                      children: [
-                        Text(
-                          'Open Module',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: accentColor,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 14,
-                          color: accentColor,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-          decoration: BoxDecoration(
-            color: color.withAlpha(isDark ? 25 : 15),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withAlpha(45), width: 0.8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: accentColor.withAlpha(isDark ? 28 : 14),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  clipBehavior: Clip.antiAlias,
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: vectorArt,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Title
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+
+              // Minimal Clean Status Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withAlpha(isDark ? 35 : 18),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  countBadge,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
                 ),
               ),
             ],
@@ -1237,7 +917,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
-  Widget _buildAvatarCircle({double radius = 18}) {
+  Widget _buildAvatarCircle({double radius = 17}) {
     final hasPic = _profilePic != null && _profilePic!.trim().isNotEmpty;
     final picUrl = hasPic
         ? (_profilePic!.startsWith('http')

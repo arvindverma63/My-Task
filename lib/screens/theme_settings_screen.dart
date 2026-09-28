@@ -9,8 +9,7 @@ import 'user_profile_screen.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
   final VoidCallback? onStartTour;
-  final VoidCallback? onRenewApp;
-  const ThemeSettingsScreen({super.key, this.onStartTour, this.onRenewApp});
+  const ThemeSettingsScreen({super.key, this.onStartTour});
 
   @override
   State<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
@@ -767,70 +766,30 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                       const SizedBox(height: 8),
                       _SettingCard(
                         isDark: isDark,
-                        child: Column(
-                          children: [
-                            ListTile(
-                              dense: true,
-                              title: const Text('Currency Symbol', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('Current currency: ${settings.currency.symbol} (${settings.currency.label})', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                              leading: Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0D9488).withAlpha(25),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.currency_rupee_rounded, color: Color(0xFF0D9488), size: 18),
-                              ),
-                              trailing: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                                ),
-                                child: Text(
-                                  settings.currency.symbol,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0D9488)),
-                                ),
-                              ),
+                        child: ListTile(
+                          dense: true,
+                          title: const Text('Currency Symbol', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          subtitle: Text('Current currency: ${settings.currency.symbol} (${settings.currency.label})', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D9488).withAlpha(25),
+                              shape: BoxShape.circle,
                             ),
-                            Divider(height: 1, indent: 52, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                            SwitchListTile(
-                              dense: true,
-                              title: const Text('Compact Mode', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('Denser padding for lists and registers', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                              secondary: Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0284C7).withAlpha(25),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.density_medium_rounded, color: Color(0xFF0284C7), size: 18),
-                              ),
-                              value: settings.compactMode,
-                              activeThumbColor: const Color(0xFF0D9488),
-                              activeTrackColor: const Color(0xFF0D9488).withAlpha(100),
-                              onChanged: (val) => settings.setCompactMode(val),
+                            child: const Icon(Icons.currency_rupee_rounded, color: Color(0xFF0D9488), size: 18),
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                             ),
-                            Divider(height: 1, indent: 52, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                            SwitchListTile(
-                              dense: true,
-                              title: const Text('Show Timestamps', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('Display exact time on activity logs', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                              secondary: Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withAlpha(25),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.schedule_rounded, color: Color(0xFF10B981), size: 18),
-                              ),
-                              value: settings.showTimestamps,
-                              activeThumbColor: const Color(0xFF0D9488),
-                              activeTrackColor: const Color(0xFF0D9488).withAlpha(100),
-                              onChanged: (val) => settings.setShowTimestamps(val),
+                            child: Text(
+                              settings.currency.symbol,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0D9488)),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -840,40 +799,20 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                       const SizedBox(height: 8),
                       _SettingCard(
                         isDark: isDark,
-                        child: Column(
-                          children: [
-                            ListTile(
-                              dense: true,
-                              title: const Text('Start Guided Tour', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('Interactive walkthrough of all household modules', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                              leading: Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0D9488).withAlpha(25),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.play_circle_filled_rounded, color: Color(0xFF0D9488), size: 18),
-                              ),
-                              trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-                              onTap: widget.onStartTour,
+                        child: ListTile(
+                          dense: true,
+                          title: const Text('Start Guided Tour', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          subtitle: Text('Interactive walkthrough of all household modules', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D9488).withAlpha(25),
+                              shape: BoxShape.circle,
                             ),
-                            Divider(height: 1, indent: 52, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                            ListTile(
-                              dense: true,
-                              title: const Text('Renew App (Fresh Seed)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFD97706))),
-                              subtitle: Text('Reload fresh sample household data', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                              leading: Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD97706).withAlpha(25),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.refresh_rounded, color: Color(0xFFD97706), size: 18),
-                              ),
-                              trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-                              onTap: widget.onRenewApp,
-                            ),
-                          ],
+                            child: const Icon(Icons.play_circle_filled_rounded, color: Color(0xFF0D9488), size: 18),
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+                          onTap: widget.onStartTour,
                         ),
                       ),
                       const SizedBox(height: 16),

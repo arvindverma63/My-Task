@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/employee_model.dart';
 import '../providers/employee_provider.dart';
-import '../services/pdf_service.dart';
 import 'employee_detail_screen.dart';
 
 enum ReportPeriod { today, thisWeek, thisMonth, lastMonth, custom }
@@ -140,7 +139,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
       body: CustomScrollView(
         slivers: [
           // Professional App Bar
-          _buildProfessionalAppBar(isDark, filteredEmployees, allEmployees, provider, dateRange),
+          _buildProfessionalAppBar(isDark),
 
           // Main Interactive Body
           SliverToBoxAdapter(
@@ -199,13 +198,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
     );
   }
 
-  SliverAppBar _buildProfessionalAppBar(
-    bool isDark,
-    List<Employee> filteredEmployees,
-    List<Employee> allEmployees,
-    EmployeeProvider provider,
-    DateTimeRange dateRange,
-  ) {
+  SliverAppBar _buildProfessionalAppBar(bool isDark) {
     return SliverAppBar(
       expandedHeight: 110,
       pinned: true,
@@ -297,48 +290,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
           ),
         ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: InkWell(
-            onTap: () async {
-              HapticFeedback.mediumImpact();
-              final allAttendance = <String, List<AttendanceEntry>>{};
-              for (final emp in filteredEmployees) {
-                final list = await provider.getAttendance(emp.id);
-                allAttendance[emp.id] = list;
-              }
-              if (mounted) {
-                await PdfService.generateEmployeeReport(filteredEmployees, allAttendance);
-              }
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(isDark ? 30 : 40),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withAlpha(60)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.picture_as_pdf_rounded, size: 16, color: Colors.white),
-                  SizedBox(width: 5),
-                  Text(
-                    'Export PDF',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -419,13 +370,13 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildEasyPeriodButton(ReportPeriod.thisMonth, 'This Month (इस महीने)', isDark),
+                _buildEasyPeriodButton(ReportPeriod.thisMonth, 'This Month', isDark),
                 const SizedBox(width: 6),
-                _buildEasyPeriodButton(ReportPeriod.thisWeek, 'This Week (इस हफ्ते)', isDark),
+                _buildEasyPeriodButton(ReportPeriod.thisWeek, 'This Week', isDark),
                 const SizedBox(width: 6),
-                _buildEasyPeriodButton(ReportPeriod.today, 'Today (आज)', isDark),
+                _buildEasyPeriodButton(ReportPeriod.today, 'Today', isDark),
                 const SizedBox(width: 6),
-                _buildEasyPeriodButton(ReportPeriod.lastMonth, 'Last Month (पिछला महीना)', isDark),
+                _buildEasyPeriodButton(ReportPeriod.lastMonth, 'Last Month', isDark),
               ],
             ),
           ),
@@ -660,7 +611,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Quick Summary (आसान सारांश)',
+                  'Quick Summary',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.bold,
@@ -744,12 +695,12 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
         children: [
           Row(
             children: [
-              // 1. Emerald Mint - Total Earned (कमाई)
+              // 1. Emerald Mint - Total Earned
               Expanded(
                 child: _buildPlayfulMetricTile(
                   icon: Icons.account_balance_wallet_rounded,
                   titleEn: 'Total Earned',
-                  titleHi: 'कुल कमाई',
+                  badgeTag: 'EARNED',
                   amount: '₹${totalEarned.toStringAsFixed(0)}',
                   subText: '$totalWorkingDays days worked',
                   bgGradient: [const Color(0xFF059669), const Color(0xFF10B981)],
@@ -757,12 +708,12 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              // 2. Warm Amber - Total Advance Paid (पेशगी)
+              // 2. Warm Amber - Total Advance Paid
               Expanded(
                 child: _buildPlayfulMetricTile(
                   icon: Icons.payments_rounded,
                   titleEn: 'Advance Paid',
-                  titleHi: 'दी गई पेशगी',
+                  badgeTag: 'ADVANCE',
                   amount: '₹${totalPaid.toStringAsFixed(0)}',
                   subText: 'Given in advance',
                   bgGradient: [const Color(0xFFD97706), const Color(0xFFF59E0B)],
@@ -774,12 +725,12 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
           const SizedBox(height: 10),
           Row(
             children: [
-              // 3. Sky Blue / Coral - Net Due Balance (देना बाकी)
+              // 3. Sky Blue / Coral - Net Due Balance
               Expanded(
                 child: _buildPlayfulMetricTile(
                   icon: balance >= 0 ? Icons.handshake_rounded : Icons.warning_amber_rounded,
                   titleEn: balance >= 0 ? 'Due to Pay' : 'Overpaid',
-                  titleHi: balance >= 0 ? 'देना बाकी है' : 'ज्यादा दिया',
+                  badgeTag: balance >= 0 ? 'DUE' : 'OVERPAID',
                   amount: '₹${balance.abs().toStringAsFixed(0)}',
                   subText: balance >= 0 ? 'Final payment' : 'Carry forward',
                   bgGradient: balance >= 0
@@ -789,12 +740,12 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              // 4. Rose Pink - Attendance Summary (हाजिरी)
+              // 4. Rose Pink - Attendance Summary
               Expanded(
                 child: _buildPlayfulMetricTile(
                   icon: Icons.calendar_today_rounded,
                   titleEn: 'Days Present',
-                  titleHi: 'आए हुए दिन',
+                  badgeTag: 'ATTENDANCE',
                   amount: '$totalWorkingDays Days',
                   subText: '$totalAbsentDays days absent',
                   bgGradient: [const Color(0xFFE11D48), const Color(0xFFFB7185)],
@@ -811,7 +762,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
   Widget _buildPlayfulMetricTile({
     required IconData icon,
     required String titleEn,
-    required String titleHi,
+    required String badgeTag,
     required String amount,
     required String subText,
     required List<Color> bgGradient,
@@ -855,7 +806,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  titleHi,
+                  badgeTag,
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
@@ -969,7 +920,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               Icon(Icons.pie_chart_rounded, size: 17, color: Color(0xFF0D9488)),
               SizedBox(width: 6),
               Text(
-                'Payment Split Graph (हिसाब की स्थिति)',
+                'Payment Split Graph',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
@@ -1130,7 +1081,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                   Icon(Icons.insights_rounded, size: 17, color: Color(0xFF0D9488)),
                   SizedBox(width: 6),
                   Text(
-                    'Attendance Score (हाजिरी का स्कोर)',
+                    'Attendance Score',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ],
@@ -1159,7 +1110,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               Expanded(
                 child: _buildAttendancePillar(
                   icon: Icons.check_circle_rounded,
-                  label: 'Present (आए)',
+                  label: 'Present',
                   count: '$totalWorkingDays Days',
                   color: const Color(0xFF10B981),
                   isDark: isDark,
@@ -1169,7 +1120,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               Expanded(
                 child: _buildAttendancePillar(
                   icon: Icons.cancel_rounded,
-                  label: 'Absent (छुट्टी)',
+                  label: 'Absent',
                   count: '$totalAbsentDays Days',
                   color: const Color(0xFFEF4444),
                   isDark: isDark,
@@ -1179,7 +1130,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               Expanded(
                 child: _buildAttendancePillar(
                   icon: Icons.schedule_rounded,
-                  label: 'Late (देरी)',
+                  label: 'Late',
                   count: '$totalLate Times',
                   color: const Color(0xFFF59E0B),
                   isDark: isDark,
@@ -1256,7 +1207,7 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Staff Settlements (कर्मचारी हिसाब)',
+                        'Staff Settlements',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1906,7 +1857,7 @@ class _EmployeeSearchBottomSheetState extends State<_EmployeeSearchBottomSheet> 
                       backgroundColor: const Color(0xFF0D9488),
                       child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 18),
                     ),
-                    title: const Text('All Staff Members (सब कर्मचारी)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: const Text('All Staff Members', style: TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('${widget.allEmployees.length} total staff in directory'),
                     trailing: widget.selectedEmployeeId == null
                         ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0D9488))

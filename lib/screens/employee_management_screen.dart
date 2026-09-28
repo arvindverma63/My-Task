@@ -408,7 +408,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'All helpers Present by default • Tap ✕ to mark Absent (छुट्टी)',
+                      'All helpers Present by default • Tap ✕ to mark Absent',
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant.withAlpha(160),
                         fontSize: 10.5,
@@ -808,7 +808,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       _QuickStatusButton(
                         icon: Icons.close_rounded,
                         label: 'A',
-                        tooltip: isAbsent ? 'Marked Absent (Tap to reset to Present)' : 'Mark Absent (छुट्टी)',
+                        tooltip: isAbsent ? 'Marked Absent (Tap to reset to Present)' : 'Mark Absent',
                         color: const Color(0xFFEF4444),
                         isActive: isAbsent,
                         onTap: () {
@@ -869,7 +869,7 @@ class _CompactEmployeeCard extends StatelessWidget {
             Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 11),
             SizedBox(width: 3.5),
             Text(
-              'Absent (छुट्टी)',
+              'Absent',
               style: TextStyle(
                 color: Color(0xFFDC2626),
                 fontWeight: FontWeight.bold,
@@ -951,7 +951,7 @@ class _CompactEmployeeCard extends StatelessWidget {
             Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 11),
             SizedBox(width: 3.5),
             Text(
-              'Present (आया)',
+              'Present',
               style: TextStyle(
                 color: Color(0xFF059669),
                 fontWeight: FontWeight.bold,
@@ -1300,7 +1300,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       _buildQuickActionButton(
                         context,
                         label: 'ABSENT',
-                        subtitle: 'छुट्टी • Mark off',
+                        subtitle: 'Mark off for day',
                         icon: Icons.cancel_rounded,
                         color: const Color(0xFFEF4444),
                         onTap: () {
@@ -1311,7 +1311,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       _buildQuickActionButton(
                         context,
                         label: 'PRESENT',
-                        subtitle: 'आया • Reset full day',
+                        subtitle: 'Full day on duty',
                         icon: Icons.check_circle_rounded,
                         color: const Color(0xFF10B981),
                         onTap: () {
@@ -1326,7 +1326,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       _buildQuickActionButton(
                         context,
                         label: 'LATE',
-                        subtitle: 'देर से • After shift',
+                        subtitle: 'Late arrival',
                         icon: Icons.timer_rounded,
                         color: const Color(0xFFF59E0B),
                         onTap: () {
@@ -1337,7 +1337,7 @@ class _CompactEmployeeCard extends StatelessWidget {
                       _buildQuickActionButton(
                         context,
                         label: 'EARLY',
-                        subtitle: 'जल्दी • Left early',
+                        subtitle: 'Early departure',
                         icon: Icons.logout_rounded,
                         color: const Color(0xFF3B82F6),
                         onTap: () {
@@ -1601,7 +1601,7 @@ class _CompactEmployeeCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${employee.name}: ${status == AttendanceStatus.present ? "Present (आया)" : "Absent (छुट्टी)"}',
+                  '${employee.name}: ${status == AttendanceStatus.present ? "Present" : "Absent"}',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),

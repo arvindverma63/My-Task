@@ -224,12 +224,12 @@ class ServiceRecord {
 
 ### 4.2 Attendance Register & Wage Calculations
 - **Default Present Architecture (Zero Friction)**:
-  - By default, all active employees are automatically marked/treated as **Present (`आया`)**. Users do not need to manually mark daily presence.
-  - Each employee card features a 1-tap **Absent (छुट्टी)** toggle button with Crimson Red styling (`#EF4444`):
+  - By default, all active employees are automatically marked/treated as **Present**. Users do not need to manually mark daily presence.
+  - Each employee card features a 1-tap **Absent** toggle button with Crimson Red styling (`#EF4444`):
     - Tapping marks the helper as **Absent**.
     - Tapping again clears the absence, immediately restoring them to **Default Present**.
   - **Tactile Haptics**: `HapticFeedback.mediumImpact()` with spring bouncing animation (`Curves.easeOutBack`).
-  - **Bilingual Status Guidance**: Displays friendly hints (e.g. `"✓ Present (आया)"`, `"✕ Absent (छुट्टी)"`, `"⏰ Late"`, `"⏰ Left Early"`).
+  - **Status Guidance**: Displays clean English hints (e.g. `"✓ Present"`, `"✕ Absent"`, `"⏰ Late"`, `"⏰ Left Early"`).
 - **Wage Calculation Engine**:
   - **Working Days Computation**: `Working Days = Elapsed Days Since Joining (up to today/relieving) - Explicit Absent Days`.
   - Generates monthly attendance cards, helper wage receipts, and daily rosters via `PdfService` with automatic default present status.
@@ -265,11 +265,11 @@ class ServiceRecord {
 ### 4.5 Executive Home Screen Hub & Page Redirection
 - **Dedicated 4-Option Home Dashboard**:
   - The application replaces standard persistent bottom navigation with a clean, executive Home Screen Hub containing 4 prominent redirection cards:
-    1. **Helper Attendance & Salary Register (`कामवाली / हेल्पर अटेंडेंस`)** -> opens `EmployeeManagementScreen`
-    2. **Ironing & Laundry Registry (`धोबी / इस्त्री का हिसाब`)** -> opens `IroningDashboardScreen`
-    3. **Appliances & Home Services (`घरेलू उपकरण व गैस/सर्विस`)** -> opens `MaintenanceScreen`
-    4. **PDF Reports & Account Settings (`रिपोर्ट्स, बैकअप व सेटिंग्स`)** -> opens `ThemeSettingsScreen`
-  - Integrated top overview summary metrics bar (active helpers, dhobi workers, total home assets, active warranties).
+    1. **Helper Attendance & Salary Register** -> opens `EmployeeManagementScreen`
+    2. **Ironing & Laundry Registry** -> opens `IroningDashboardScreen`
+    3. **Appliances & Home Services** -> opens `MaintenanceScreen`
+    4. **PDF Reports & App Settings** -> opens `ThemeSettingsScreen`
+  - Integrated top overview summary metrics bar (active helpers, laundry workers, total home assets, active warranties).
   - Child screens feature integrated leading back arrow navigation (`Icons.arrow_back_ios_new_rounded`) to return to the Home Hub smoothly.
 - **Mobile-First Compact Density**:
   - Standardized margins (`12–16 dp`), border radii (`14–16 dp`), tactile haptics.
@@ -385,8 +385,9 @@ Any future modifications must strictly adhere to the following build gates:
 - ✅ **Executive Home Screen 4-Option Redirection Hub (v1.1.0)**: Removed persistent bottom navigation bar. Transformed the home screen into an executive dashboard hub featuring 4 large vector-illustrated redirection cards (Attendance, Ironing, Appliances & Services, and Reports/Settings), real-time summary counters, quick action chips, and back button navigation across all child screens.
 - ✅ **Notification Engine & Proguard Obfuscation Fix**: Added `proguard-rules.pro` keeping Gson generic type reflection (`Signature`, `TypeToken`) for `flutter_local_notifications` in release builds, and fortified `NotificationService` and `ApplianceProvider` with safe fallback error handling so appliance and service saves never fail.
 - ✅ **MySQL Data Type Deserialization Fix**: Fixed type mismatch in `Appliance.fromMap` and `ServiceRecord.fromMap` where MySQL `tinyint(1)` returns integer `1` / `0` for `isDueNotificationEnabled` (and string/numeric representations), which previously threw a `TypeError` and resulted in an empty list on the UI.
-- ✅ **Mobile-First Compact Density & RenderFlex Overflow Fix**: Resolved horizontal `RenderFlex` overflow (black striped pattern on 353 dp widths) across `ApplianceServiceDetailScreen` cards by wrapping unconstrained title rows in `Expanded` and adding single-line truncation ellipsis.
-- ✅ **R8 Release Compilation & Play Core Suppression**: Added `-dontwarn` rules for optional Google Play Core and deferred component classes in `proguard-rules.pro`, enabling successful `flutter build apk --release` (58.6 MB).
+- ✅ **Executive 2x2 Square Grid Dashboard (v1.1.0)**: Redesigned `MainDashboardScreen` into a clean, modern 2x2 square grid featuring 4 large centered vector illustration tiles (Helper Attendance, Ironing & Laundry, Appliances & Services, Reports & Settings) with minimal text, zero clutter, and fast 1-tap navigation.
+- ✅ **Employee Report Cleanup**: Removed the Export PDF button and related dependencies from `EmployeeReportScreen` for a streamlined digital ledger view.
+- ✅ **Settings Screen Cleanup**: Removed unused toggles (`Compact Mode`, `Show Timestamps`) and `Renew App (Fresh Seed)` reset dialogs from `ThemeSettingsScreen` and `MainDashboardScreen`.
 
 ### 8.2 Future Planned Roadmap (Backlog for Future Updates)
 - [ ] **Offline Sync Queue**: Implement local SQLite queue that automatically pushes mutations to the cloud when internet connection is restored.

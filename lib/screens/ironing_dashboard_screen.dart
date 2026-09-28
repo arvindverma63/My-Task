@@ -194,7 +194,7 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Clothes count, rates & payments (इस्त्री का हिसाब)',
+                    'Clothes count, rate matrix & payments',
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,

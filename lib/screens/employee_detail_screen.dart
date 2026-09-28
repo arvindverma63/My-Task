@@ -1047,7 +1047,7 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Present by Default (आया)',
+                                      'Present by Default',
                                       style: TextStyle(
                                         color: isDark ? Colors.white : const Color(0xFF0F172A),
                                         fontSize: 13.5,
@@ -1087,7 +1087,7 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                                     context.read<EmployeeProvider>().markAttendance(entry);
                                   },
                                   icon: const Icon(Icons.cancel_rounded, size: 16),
-                                  label: const Text('Mark Absent (छुट्टी)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                                  label: const Text('Mark Absent', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                                 ),
                               ),
                             ],

@@ -23,7 +23,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<_OnboardingItem> _items = const [
     _OnboardingItem(
       title: 'Helper Attendance & Salary',
-      hindiTitle: 'कामवाली / हेल्पर अटेंडेंस व पगार',
+      categoryBadge: 'Staff & Wages',
       subtitle: '1-tap Present / Absent tracking with auto-computed salary & advance balances.',
       accentColor: Color(0xFF10B981),
       icon: Icons.people_alt_rounded,
@@ -36,8 +36,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       vectorWidget: AttendanceVectorArt(size: 190),
     ),
     _OnboardingItem(
-      title: 'Ironing & Dhobi Tracker',
-      hindiTitle: 'धोबी / इस्त्री का हिसाब व रेट कार्ड',
+      title: 'Ironing & Laundry Registry',
+      categoryBadge: 'Laundry & Rates',
       subtitle: 'Batch cloth tallying by sizes with dynamic rate cards and vendor settlements.',
       accentColor: Color(0xFF6366F1),
       icon: Icons.iron_rounded,
@@ -51,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     _OnboardingItem(
       title: 'Appliances & Home Services',
-      hindiTitle: 'घरेलू उपकरण, गैस सिलिंडर व सर्विस',
+      categoryBadge: 'Assets & Utilities',
       subtitle: 'Track LPG gas refills, drinking water delivery, AC service and asset warranties.',
       accentColor: Color(0xFF0D9488),
       icon: Icons.devices_other_rounded,
@@ -65,7 +65,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     _OnboardingItem(
       title: 'PDF Reports & Settings',
-      hindiTitle: 'रिपोर्ट्स, बैकअप व एकाउंट सेटिंग्स',
+      categoryBadge: 'Reports & Sync',
       subtitle: '1-click executive PDF statement exports, secure cloud sync and custom themes.',
       accentColor: Color(0xFFF59E0B),
       icon: Icons.settings_rounded,
@@ -255,7 +255,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           child: Text(
-                            item.hindiTitle,
+                            item.categoryBadge,
                             style: TextStyle(
                               color: item.accentColor,
                               fontSize: 11.5,
@@ -496,7 +496,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class _OnboardingItem {
   final String title;
-  final String hindiTitle;
+  final String categoryBadge;
   final String subtitle;
   final Color accentColor;
   final IconData icon;
@@ -506,7 +506,7 @@ class _OnboardingItem {
 
   const _OnboardingItem({
     required this.title,
-    required this.hindiTitle,
+    required this.categoryBadge,
     required this.subtitle,
     required this.accentColor,
     required this.icon,
