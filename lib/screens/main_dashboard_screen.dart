@@ -647,7 +647,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 Row(
                   children: [
                     Text(
-                      'Homely',
+                      'Homelly',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,

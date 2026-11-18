@@ -833,7 +833,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                               ),
                               child: Text(
-                                'Homely • v1.0.0',
+                                'Homelly • v1.0.0',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
