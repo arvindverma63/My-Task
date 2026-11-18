@@ -1,12 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/session_manager.dart';
 import '../widgets/vector_illustrations.dart';
 import 'auth_screen.dart';
-import 'main_dashboard_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -85,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _completeOnboarding([int targetTab = 0]) async {
+  Future<void> _completeOnboarding() async {
     if (_isNavigating) return;
     setState(() => _isNavigating = true);
     HapticFeedback.mediumImpact();
@@ -93,42 +89,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_onboarding_v2', true);
 
-    final session = SessionManager();
-    final uid = await session.getUserId();
-    if (uid == null) {
-      try {
-        final response = await http.post(
-          Uri.parse('https://slateblue-guanaco-751834.hostingersite.com/api/register-guest'),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 4));
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data['success'] == true) {
-            await session.saveSession(
-              userId: data['userId'],
-              username: data['username'],
-              userType: data['userType'],
-              expiresAt: data['expiresAt'],
-            );
-          }
-        }
-      } catch (_) {
-        // Fallback local guest session
-        await session.saveSession(
-          userId: 'guest_${DateTime.now().millisecondsSinceEpoch}',
-          username: 'Guest User',
-          userType: 'guest',
-        );
-      }
-    }
-
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            MainDashboardScreen(initialIndex: targetTab),
+        pageBuilder: (context, animation, secondaryAnimation) => const AuthScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
@@ -189,11 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const AuthScreen()),
-                      );
-                    },
+                    onPressed: _isNavigating ? null : _completeOnboarding,
                     style: TextButton.styleFrom(
                       foregroundColor: isDark ? Colors.white70 : const Color(0xFF64748B),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -205,7 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(width: 4),
                   FilledButton.tonal(
-                    onPressed: _isNavigating ? null : () => _completeOnboarding(0),
+                    onPressed: _isNavigating ? null : _completeOnboarding,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       minimumSize: Size.zero,
@@ -445,7 +406,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     curve: Curves.easeOutCubic,
                                   );
                                 } else {
-                                  _completeOnboarding(_currentPage);
+                                  _completeOnboarding();
                                 }
                               },
                         style: FilledButton.styleFrom(
@@ -468,7 +429,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 children: [
                                   Text(
                                     _currentPage == _items.length - 1
-                                        ? 'Open ${currentItem.navLabel}'
+                                        ? 'Get Started'
                                         : 'Next: ${_items[_currentPage + 1].navLabel}',
                                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                   ),
