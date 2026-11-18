@@ -94,6 +94,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             final freshDays = await session.getDaysRemaining();
             if (mounted) {
               setState(() {
+                _isGuest = ((data['userType'] ?? type ?? 'guest') == 'guest');
                 _username = data['username'] ?? _username;
                 _profilePic = data['profilePic'] ?? _profilePic;
                 _guestDaysRemaining = freshDays;
@@ -220,7 +221,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             ),
           ),
           FilledButton(
-            onPressed: _showUpgradeAccountDialog,
+            onPressed: _showSubscriptionDialog,
             style: FilledButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFFB45309),
@@ -239,146 +240,235 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
-  void _showUpgradeAccountDialog() {
-    final usernameController = TextEditingController();
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+  void _showSubscriptionDialog() {
     bool isSaving = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          title: const Row(
-            children: [
-              Icon(Icons.upgrade_rounded, color: Colors.orange, size: 22),
-              SizedBox(width: 8),
-              Text('Convert to Member', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
+        builder: (context, setDlgState) => Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Upgrade your account to save helper, ironing, and appliance logs permanently in the cloud.',
-                    style: TextStyle(fontSize: 12, height: 1.3),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF78350F), const Color(0xFF92400E)]
+                            : [const Color(0xFFFEF3C7), const Color(0xFFFDE68A)],
+                      ),
+                      border: Border(
+                        bottom: BorderSide(color: isDark ? const Color(0xFFD97706) : const Color(0xFFFCD34D)),
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter username';
-                      }
-                      if (value.trim().length < 4) {
-                        return 'Username must be at least 4 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: const Color(0xFFD97706),
+                          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Upgrade to Premium',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: isDark ? Colors.white : const Color(0xFF78350F),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black.withAlpha(20),
+                            padding: const EdgeInsets.all(4),
+                            minimumSize: Size.zero,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Unlock unlimited helper logs, ironing registries, appliance warranty trackers, and instant cloud sync across all your devices.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.4,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withAlpha(isDark ? 30 : 15),
+                            border: Border.all(color: const Color(0xFFF59E0B).withAlpha(120), width: 1.5),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.workspace_premium_rounded, color: Color(0xFFF59E0B), size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'LIFETIME PASS',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFF59E0B), letterSpacing: 0.8),
+                                  ),
+                                  Spacer(),
+                                  Text(
+                                    '₹999 One-Time',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFF59E0B)),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Pay once, enjoy forever. No recurring charges or hidden fees.',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488).withAlpha(isDark ? 25 : 12),
+                            border: Border.all(color: const Color(0xFF0D9488).withAlpha(80), width: 1.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today_rounded, color: Color(0xFF0D9488), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'ANNUAL PASS',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF0D9488), letterSpacing: 0.8),
+                                  ),
+                                  Spacer(),
+                                  Text(
+                                    '₹299 / Year',
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0D9488)),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Billed annually with automatic backup & priority support.',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: isSaving ? null : () => Navigator.pop(context),
+                          child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B))),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  setDlgState(() => isSaving = true);
+                                  try {
+                                    final uid = _userId ?? '';
+                                    final response = await http.post(
+                                      Uri.parse('https://slateblue-guanaco-751834.hostingersite.com/api/update-subscription?userId=$uid'),
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-User-Id': uid,
+                                      },
+                                      body: json.encode({'userId': uid}),
+                                    );
+                                    final data = json.decode(response.body);
+                                    if (response.statusCode == 200 && data['success'] == true) {
+                                      await SessionManager().saveSession(
+                                        userId: uid,
+                                        username: _username,
+                                        userType: 'registered',
+                                        expiresAt: null,
+                                      );
+                                      await _loadSession();
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('🎉 You are now a Premium Member!'),
+                                            backgroundColor: Color(0xFF059669),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(data['error'] ?? 'Subscription upgrade failed.'),
+                                            backgroundColor: Colors.redAccent,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Network error. Check connection.'),
+                                          backgroundColor: Colors.redAccent,
+                                        ),
+                                      );
+                                    }
+                                  } finally {
+                                    setDlgState(() => isSaving = false);
+                                  }
+                                },
+                          child: isSaving
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Text('Upgrade Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: isSaving ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: isSaving
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDlgState(() => isSaving = true);
-
-                      try {
-                        final response = await http.post(
-                          Uri.parse('https://slateblue-guanaco-751834.hostingersite.com/api/convert-guest'),
-                          headers: {'Content-Type': 'application/json'},
-                          body: json.encode({
-                            'userId': _userId,
-                            'username': usernameController.text.trim(),
-                            'password': passwordController.text,
-                          }),
-                        );
-
-                        final data = json.decode(response.body);
-
-                        if (response.statusCode == 200 && data['success'] == true) {
-                          await SessionManager().saveSession(
-                            userId: data['userId'],
-                            username: data['username'],
-                            userType: data['userType'],
-                            expiresAt: data['expiresAt'],
-                          );
-                          await _loadSession();
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Account upgraded successfully! Welcome aboard.'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        } else {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(data['error'] ?? 'Conversion failed.'),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Network error. Check connection.'),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                        }
-                      } finally {
-                        setDlgState(() => isSaving = false);
-                      }
-                    },
-              child: isSaving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Upgrade'),
-            ),
-          ],
         ),
       ),
     );
