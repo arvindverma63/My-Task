@@ -742,29 +742,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0D9488),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'User Profile & Account',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
+        title: const Text('Profile'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, size: 20),
-            tooltip: 'Refresh Profile',
-            onPressed: _loadProfile,
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_rounded, size: 20),
-            tooltip: 'Edit Profile',
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: 'Edit profile',
             onPressed: _showEditProfileDialog,
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, size: 20),
-            tooltip: 'Sign Out',
-            onPressed: _showLogoutDialog,
-          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: _isLoading
@@ -774,29 +759,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               color: const Color(0xFF0D9488),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                padding: const EdgeInsets.fromLTRB(14, 6, 14, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // 1. Executive Hero Profile Card
                     _buildProfileHeroCard(isDark, isGuest, avatarUrl),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // 2. Household Overview Stats
                     _buildQuickStatsCard(isDark, totalStaff, totalAppliances),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // 3. Account Information & ID
                     _buildAccountInfoCard(isDark, isGuest),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // 4. Cloud & Security Status Card
                     _buildSecurityAndSyncCard(isDark),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // 5. Quick Action Hub
                     _buildQuickActionsCard(isDark),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
                     // 6. Action Buttons
                     Row(
@@ -806,8 +791,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF0D9488),
                               side: BorderSide(color: isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488)),
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             icon: const Icon(Icons.edit_rounded, size: 18),
                             label: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -820,8 +805,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFFEF4444),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             icon: const Icon(Icons.logout_rounded, size: 18),
                             label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -847,16 +832,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ? [const Color(0xFF134E4A), const Color(0xFF0F766E), const Color(0xFF1E293B)]
               : [const Color(0xFF0F766E), const Color(0xFF0D9488), const Color(0xFF14B8A6)],
         ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D9488).withAlpha(isDark ? 70 : 45),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         children: [
           // Avatar with Camera Badge
@@ -864,11 +842,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             alignment: Alignment.bottomRight,
             children: [
               Container(
-                width: 96,
-                height: 96,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
+                  border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(40),
@@ -878,7 +856,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ],
                 ),
                 child: CircleAvatar(
-                  radius: 46,
+                  radius: 34,
                   backgroundColor: Colors.white.withAlpha(40),
                   child: _isUploadingPic
                       ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
@@ -886,12 +864,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           child: avatarUrl != null
                               ? Image.network(
                                   avatarUrl,
-                                  width: 92,
-                                  height: 92,
+                                  width: 68,
+                                  height: 68,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => const Icon(
                                     Icons.person_rounded,
-                                    size: 50,
+                                    size: 36,
                                     color: Colors.white,
                                   ),
                                   loadingBuilder: (context, child, progress) {
@@ -901,7 +879,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     );
                                   },
                                 )
-                              : const Icon(Icons.person_rounded, size: 50, color: Colors.white),
+                              : const Icon(Icons.person_rounded, size: 36, color: Colors.white),
                         ),
                 ),
               ),
@@ -909,7 +887,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 onTap: _isUploadingPic ? null : _pickAndUploadPhoto,
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.all(7),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981),
                     shape: BoxShape.circle,
@@ -932,9 +910,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             _username.isNotEmpty ? _username : 'Household Manager',
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              letterSpacing: 0.3,
+              fontWeight: FontWeight.w700,
+              fontSize: 17,
+              letterSpacing: -0.2,
             ),
             textAlign: TextAlign.center,
           ),
@@ -969,7 +947,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    isGuest ? 'Free Trial • $_guestDaysRemaining Days Left' : 'VIP Executive Member',
+                    isGuest ? 'Free trial • $_guestDaysRemaining days left' : 'Lifetime member',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -994,13 +972,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Row(
@@ -1091,13 +1062,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -1208,13 +1172,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -1279,13 +1236,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       child: Column(

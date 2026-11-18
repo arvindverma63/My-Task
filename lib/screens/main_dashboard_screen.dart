@@ -16,6 +16,8 @@ import '../models/ironing_model.dart';
 import '../models/appliance_model.dart';
 import '../utils/session_manager.dart';
 import '../widgets/vector_illustrations.dart';
+import '../widgets/app_ui.dart';
+import '../theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -172,7 +174,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     if (!_isGuest) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 2),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -181,13 +183,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFD97706).withAlpha(60),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -206,7 +201,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  '30-Day Free Guest Trial',
+                  'Free guest trial',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -214,7 +209,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 Text(
-                  '$_guestDaysRemaining days left • Upgrade to save data permanently',
+                  '$_guestDaysRemaining days left • Upgrade to keep your data',
                   style: TextStyle(
                     color: Colors.white.withAlpha(220),
                     fontSize: 10.5,
@@ -512,6 +507,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
+  Future<void> _refreshAll() async {
+    await Future.wait([
+      context.read<EmployeeProvider>().refreshData(),
+      context.read<ApplianceProvider>().loadAppliances(),
+    ]);
+    await _loadSession();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -521,296 +524,91 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     final helpersCount = employeeProvider.employees.length;
     final workersCount = employeeProvider.ironingWorkers.length;
     final appliancesCount = applianceProvider.appliances.length;
+    final attention = _buildAttentionItems(applianceProvider.appliances);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        top: true,
         bottom: false,
         child: Column(
           children: [
             _buildGuestBanner(),
-            // 1. Header Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF047857)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(13),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withAlpha(70),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.task_alt_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'My-Task',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.3,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: _isGuest
-                                    ? Colors.amber.withAlpha(isDark ? 40 : 25)
-                                    : const Color(0xFF10B981).withAlpha(isDark ? 40 : 25),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: _isGuest ? Colors.amber.shade700 : const Color(0xFF10B981),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: Text(
-                                _isGuest ? 'Guest Trial' : 'Active',
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _isGuest
-                                      ? (isDark ? Colors.amber.shade300 : Colors.amber.shade900)
-                                      : const Color(0xFF10B981),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          '${_getGreeting()}, $_username',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _isRefreshing ? null : _handleManualSync,
-                    icon: _isRefreshing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
-                          )
-                        : Icon(
-                            Icons.sync_rounded,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                            size: 22,
-                          ),
-                    tooltip: 'Sync Data',
-                    style: IconButton.styleFrom(
-                      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      padding: const EdgeInsets.all(8),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: () => _navigateTo(const UserProfileScreen()),
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF10B981),
-                          width: 1.8,
-                        ),
-                      ),
-                      child: _buildAvatarCircle(radius: 17),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 2. The 4 Squares 2x2 Clean Professional Grid (Top-Aligned & Naturally Proportioned)
+            _buildHeader(isDark),
             Expanded(
               child: RefreshIndicator(
-                color: const Color(0xFF10B981),
-                backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                onRefresh: () async {
-                  await Future.wait([
-                    context.read<EmployeeProvider>().refreshData(),
-                    context.read<ApplianceProvider>().loadAppliances(),
-                  ]);
-                  await _loadSession();
-                },
-                child: SingleChildScrollView(
+                onRefresh: _refreshAll,
+                child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Options Section Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+                  children: [
+                    const AppSectionLabel('Manage'),
+                    const SizedBox(height: 8),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const spacing = 10.0;
+                        final cardWidth = (constraints.maxWidth - spacing) / 2;
+                        final cardHeight = (cardWidth * 0.84).clamp(128.0, 190.0);
+
+                        Widget tile(Widget child) => SizedBox(width: cardWidth, height: cardHeight, child: child);
+
+                        return Wrap(
+                          spacing: spacing,
+                          runSpacing: spacing,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              margin: const EdgeInsets.only(bottom: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withAlpha(isDark ? 35 : 20),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFF10B981).withAlpha(60),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.grid_view_rounded, size: 12, color: Color(0xFF10B981)),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'MANAGEMENT OPTIONS',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.8,
-                                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              'Household Management',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.4,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Select an option below to manage your home records',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              ),
-                            ),
+                            tile(_buildModuleTile(
+                              title: 'Helper Attendance',
+                              countBadge: '$helpersCount ${helpersCount == 1 ? "helper" : "helpers"}',
+                              accentColor: const Color(0xFF10B981),
+                              vectorArt: const AttendanceVectorArt(size: 68),
+                              isDark: isDark,
+                              onTap: () => _navigateTo(const EmployeeManagementScreen()),
+                            )),
+                            tile(_buildModuleTile(
+                              title: 'Ironing & Laundry',
+                              countBadge: '$workersCount ${workersCount == 1 ? "worker" : "workers"}',
+                              accentColor: const Color(0xFF6366F1),
+                              vectorArt: const IroningVectorArt(size: 68),
+                              isDark: isDark,
+                              onTap: () => _navigateTo(const IroningDashboardScreen()),
+                            )),
+                            tile(_buildModuleTile(
+                              title: 'Appliances & Services',
+                              countBadge: '$appliancesCount ${appliancesCount == 1 ? "item" : "items"}',
+                              accentColor: const Color(0xFF0D9488),
+                              vectorArt: const ApplianceVectorArt(size: 68),
+                              isDark: isDark,
+                              onTap: () => _navigateTo(const MaintenanceScreen()),
+                            )),
+                            tile(_buildModuleTile(
+                              title: 'Reports & Settings',
+                              countBadge: 'Settings & tour',
+                              accentColor: const Color(0xFFF59E0B),
+                              vectorArt: const ReportsSettingsVectorArt(size: 68),
+                              isDark: isDark,
+                              onTap: () => _navigateTo(ThemeSettingsScreen(
+                                onStartTour: _showTourGuideDialog,
+                              )),
+                            )),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // 2x2 Grid Layout
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          const spacing = 12.0;
-                          final cardWidth = (constraints.maxWidth - spacing) / 2;
-                          final cardHeight = cardWidth * 1.08;
-
-                          return Column(
-                            children: [
-                              Row(
-                                children: [
-                                  // Square 1: Helper Attendance
-                                  SizedBox(
-                                    width: cardWidth,
-                                    height: cardHeight,
-                                    child: _buildSquareTile(
-                                      title: 'Helper Attendance',
-                                      countBadge: '$helpersCount ${helpersCount == 1 ? "Helper" : "Helpers"}',
-                                      accentColor: const Color(0xFF10B981),
-                                      vectorArt: const AttendanceVectorArt(size: 68),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(const EmployeeManagementScreen()),
-                                    ),
-                                  ),
-                                  const SizedBox(width: spacing),
-                                  // Square 2: Ironing & Laundry
-                                  SizedBox(
-                                    width: cardWidth,
-                                    height: cardHeight,
-                                    child: _buildSquareTile(
-                                      title: 'Ironing & Laundry',
-                                      countBadge: '$workersCount ${workersCount == 1 ? "Worker" : "Workers"}',
-                                      accentColor: const Color(0xFF6366F1),
-                                      vectorArt: const IroningVectorArt(size: 68),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(const IroningDashboardScreen()),
-                                    ),
-                                  ),
-                                ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    AppSectionLabel(
+                      'Needs attention',
+                      trailing: attention.isEmpty
+                          ? null
+                          : Text(
+                              '${attention.length}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.subtitle(isDark),
                               ),
-                              const SizedBox(height: spacing),
-                              Row(
-                                children: [
-                                  // Square 3: Appliances & Services
-                                  SizedBox(
-                                    width: cardWidth,
-                                    height: cardHeight,
-                                    child: _buildSquareTile(
-                                      title: 'Appliances & Services',
-                                      countBadge: '$appliancesCount ${appliancesCount == 1 ? "Item" : "Items"}',
-                                      accentColor: const Color(0xFF0D9488),
-                                      vectorArt: const ApplianceVectorArt(size: 68),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(const MaintenanceScreen()),
-                                    ),
-                                  ),
-                                  const SizedBox(width: spacing),
-                                  // Square 4: Reports & Settings
-                                  SizedBox(
-                                    width: cardWidth,
-                                    height: cardHeight,
-                                    child: _buildSquareTile(
-                                      title: 'Reports & Settings',
-                                      countBadge: 'Settings & Tour',
-                                      accentColor: const Color(0xFFF59E0B),
-                                      vectorArt: const ReportsSettingsVectorArt(size: 68),
-                                      isDark: isDark,
-                                      onTap: () => _navigateTo(ThemeSettingsScreen(
-                                        onStartTour: _showTourGuideDialog,
-                                      )),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                            ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildAttentionCard(attention, isDark),
+                  ],
                 ),
               ),
             ),
@@ -820,7 +618,275 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 
-  Widget _buildSquareTile({
+  Widget _buildHeader(bool isDark) {
+    final statusColor = _isGuest ? AppColors.warning : AppColors.success;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 14, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Icon(Icons.home_rounded, color: Colors.white, size: 21),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Homely',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        height: 1.2,
+                        color: AppColors.title(isDark),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: statusColor.withAlpha(isDark ? 45 : 28),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _isGuest ? 'Guest trial' : 'Active',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: _isGuest
+                              ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+                              : (isDark ? const Color(0xFF34D399) : const Color(0xFF047857)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${_getGreeting()}, $_username',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.subtitle(isDark),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _isRefreshing
+              ? const SizedBox(
+                  width: 38,
+                  height: 38,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : AppHeaderAction(
+                  icon: Icons.sync_rounded,
+                  tooltip: 'Sync data',
+                  onPressed: _handleManualSync,
+                ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'Profile',
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => _navigateTo(const UserProfileScreen()),
+              child: _buildAvatarCircle(radius: 19),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Payments due within a week (or overdue) and warranty or validity ending within 30 days,
+  /// most urgent first.
+  List<_AttentionItem> _buildAttentionItems(List<Appliance> appliances) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final items = <_AttentionItem>[];
+
+    for (final a in appliances) {
+      final status = a.dueStatus;
+      if (status == 'overdue' || status == 'due_today' || status == 'due_soon') {
+        final days = a.daysUntilDue ?? 0;
+        final amount = (a.dueAmount ?? 0) > 0 ? ' • ₹${a.dueAmount!.toStringAsFixed(0)}' : '';
+        final String when;
+        if (days < 0) {
+          when = 'Payment overdue by ${-days} ${days == -1 ? "day" : "days"}';
+        } else if (days == 0) {
+          when = 'Payment due today';
+        } else {
+          when = 'Payment due in $days ${days == 1 ? "day" : "days"}';
+        }
+        items.add(_AttentionItem(
+          title: a.name,
+          detail: '$when$amount',
+          days: days,
+          icon: days < 0 ? Icons.error_outline_rounded : Icons.event_repeat_rounded,
+          color: days < 0 ? AppColors.danger : (days == 0 ? AppColors.warning : AppColors.brand),
+        ));
+      }
+
+      final end = a.warrantyEnd;
+      if (end != null) {
+        final days = DateTime(end.year, end.month, end.day).difference(today).inDays;
+        if (days >= 0 && days <= 30) {
+          items.add(_AttentionItem(
+            title: a.name,
+            detail: days == 0 ? 'Validity ends today' : 'Validity ends in $days ${days == 1 ? "day" : "days"}',
+            days: days,
+            icon: Icons.verified_user_outlined,
+            color: days <= 7 ? AppColors.warning : AppColors.info,
+          ));
+        }
+      }
+    }
+
+    items.sort((x, y) => x.days.compareTo(y.days));
+    return items;
+  }
+
+  Widget _buildAttentionCard(List<_AttentionItem> items, bool isDark) {
+    final decoration = BoxDecoration(
+      color: AppColors.surface(isDark),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.border(isDark)),
+    );
+
+    if (items.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: decoration,
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded, size: 20, color: AppColors.success),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'All caught up. No payments or renewals are due soon.',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.subtitle(isDark),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    const maxRows = 4;
+    final shown = items.take(maxRows).toList();
+    final extra = items.length - shown.length;
+
+    return Container(
+      decoration: decoration,
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            for (var i = 0; i < shown.length; i++) ...[
+              if (i > 0) Divider(height: 1, indent: 50, color: AppColors.border(isDark)),
+              InkWell(
+                onTap: () => _navigateTo(const MaintenanceScreen()),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: shown[i].color.withAlpha(isDark ? 40 : 24),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(shown[i].icon, size: 16, color: shown[i].color),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shown[i].title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.title(isDark),
+                              ),
+                            ),
+                            Text(
+                              shown[i].detail,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.subtitle(isDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.subtitle(isDark)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (extra > 0) ...[
+              Divider(height: 1, color: AppColors.border(isDark)),
+              InkWell(
+                onTap: () => _navigateTo(const MaintenanceScreen()),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  child: Center(
+                    child: Text(
+                      'View $extra more',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModuleTile({
     required String title,
     required String countBadge,
     required Color accentColor,
@@ -828,85 +894,66 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
+    final radius = BorderRadius.circular(16);
+
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
+      color: AppColors.surface(isDark),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: AppColors.border(isDark)),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        splashColor: accentColor.withAlpha(35),
-        highlightColor: accentColor.withAlpha(18),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark ? Colors.black.withAlpha(50) : accentColor.withAlpha(14),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
+        splashColor: accentColor.withAlpha(30),
+        highlightColor: accentColor.withAlpha(16),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Vector Illustration in seamless soft background
               Expanded(
                 child: Container(
-                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: accentColor.withAlpha(isDark ? 28 : 14),
-                    borderRadius: BorderRadius.circular(14),
+                    color: accentColor.withAlpha(isDark ? 28 : 16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: Padding(
-                        padding: const EdgeInsets.all(6.0),
-                        child: vectorArt,
-                      ),
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: vectorArt,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Title
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                    height: 1.2,
+                    color: AppColors.title(isDark),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
-
-              // Minimal Clean Status Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: accentColor.withAlpha(isDark ? 35 : 18),
-                  borderRadius: BorderRadius.circular(6),
-                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 1, 2, 2),
                 child: Text(
                   countBadge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: accentColor,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.subtitle(isDark),
                   ),
                 ),
               ),
@@ -930,7 +977,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: const Color(0xFF10B981).withAlpha(30),
+      backgroundColor: AppColors.brand.withAlpha(34),
       child: ClipOval(
         child: picUrl != null
             ? Image.network(
@@ -955,17 +1002,33 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         child: Text(
           initial,
           style: TextStyle(
-            color: const Color(0xFF10B981),
-            fontWeight: FontWeight.bold,
-            fontSize: radius * 0.85,
+            color: AppColors.brand,
+            fontWeight: FontWeight.w800,
+            fontSize: radius * 0.8,
           ),
         ),
       );
     }
     return Icon(
       Icons.person_rounded,
-      color: const Color(0xFF10B981),
+      color: AppColors.brand,
       size: radius * 1.15,
     );
   }
+}
+
+class _AttentionItem {
+  final String title;
+  final String detail;
+  final int days;
+  final IconData icon;
+  final Color color;
+
+  const _AttentionItem({
+    required this.title,
+    required this.detail,
+    required this.days,
+    required this.icon,
+    required this.color,
+  });
 }

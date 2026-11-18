@@ -135,7 +135,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
         : allEmployees.where((e) => e.id == _selectedEmployeeId).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
       body: CustomScrollView(
         slivers: [
           // Professional App Bar
@@ -200,95 +199,23 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
 
   SliverAppBar _buildProfessionalAppBar(bool isDark) {
     return SliverAppBar(
-      expandedHeight: 110,
       pinned: true,
-      elevation: 0,
-      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F766E),
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      const Color(0xFF0F172A),
-                      const Color(0xFF134E4A),
-                      const Color(0xFF1E293B),
-                    ]
-                  : [
-                      const Color(0xFF0F766E),
-                      const Color(0xFF0D9488),
-                      const Color(0xFF14B8A6),
-                    ],
+      toolbarHeight: 56,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Helper Reports'),
+          Text(
+            'Attendance, wages and settlements',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: -20,
-                right: -20,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withAlpha(isDark ? 10 : 25),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 12,
-                left: 18,
-                right: 18,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(isDark ? 25 : 35),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.summarize_rounded,
-                        size: 22,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Helper Reports & Diary',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Attendance, Wages & Settlement Ledger',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withAlpha(220),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -313,13 +240,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 8),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,13 +354,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
               : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
           width: _selectedEmployeeId != null ? 1.3 : 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 20 : 5),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -904,13 +817,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1062,13 +968,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1266,13 +1165,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                 border: Border.all(
                   color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 25 : 6),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Material(
                 color: Colors.transparent,
@@ -1593,13 +1485,6 @@ class _EmployeeReportScreenState extends State<EmployeeReportScreen> {
                     color: statusColor.withAlpha(isDark ? 50 : 35),
                     width: 1.1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(isDark ? 20 : 5),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
                 ),
                 child: Row(
                   children: [

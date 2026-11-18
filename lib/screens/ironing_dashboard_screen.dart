@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/employee_provider.dart';
 import '../models/ironing_model.dart';
+import '../widgets/app_ui.dart';
 
 class IroningDashboardScreen extends StatefulWidget {
   const IroningDashboardScreen({super.key});
@@ -112,138 +113,17 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
         ? workers.firstWhere((w) => w.id == _selectedWorkerId, orElse: () => workers.first)
         : null;
 
-    final mainHeaderCard = SafeArea(
-      bottom: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF134E4A), const Color(0xFF1E293B)]
-                : [const Color(0xFF0F766E), const Color(0xFF0D9488)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0D9488).withAlpha(isDark ? 30 : 25),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+    final mainHeaderCard = AppPageHeader(
+      title: 'Ironing & Laundry',
+      subtitle: '${workers.length} ${workers.length == 1 ? "worker" : "workers"} • Clothes, rates and payments',
+      isLoading: employeeProvider.isLoading,
+      actions: [
+        AppHeaderAction(
+          icon: Icons.person_add_rounded,
+          label: 'Add Worker',
+          onPressed: () => _showAddWorkerDialog(context),
         ),
-        child: Row(
-          children: [
-            if (Navigator.canPop(context)) ...[
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                tooltip: 'Back to Home',
-                onPressed: () => Navigator.pop(context),
-              ),
-              const SizedBox(width: 4),
-            ],
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(isDark ? 25 : 35),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.iron_rounded, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Flexible(
-                        child: Text(
-                          'Ironing Registry',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(isDark ? 30 : 40),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${workers.length} ${workers.length == 1 ? "worker" : "workers"}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Clothes count, rate matrix & payments',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withAlpha(220),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              child: InkWell(
-                onTap: () => _showAddWorkerDialog(context),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(isDark ? 30 : 40),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.white.withAlpha(60),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_add_rounded, size: 14, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text(
-                        'Add Worker',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
 
     return Scaffold(
@@ -253,18 +133,6 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
           ? Column(
               children: [
                 mainHeaderCard,
-                if (employeeProvider.isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(2)),
-                      child: LinearProgressIndicator(
-                        minHeight: 2.5,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
-                      ),
-                    ),
-                  ),
                 Expanded(
                   child: Center(
                     child: employeeProvider.isLoading && workers.isEmpty
@@ -331,18 +199,6 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
           : Column(
               children: [
                 mainHeaderCard,
-                if (employeeProvider.isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(2)),
-                      child: LinearProgressIndicator(
-                        minHeight: 2.5,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
-                      ),
-                    ),
-                  ),
                 Expanded(
                   child: RefreshIndicator(
                     color: const Color(0xFF0D9488),
@@ -440,13 +296,6 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -728,13 +577,6 @@ class _IroningDashboardScreenState extends State<IroningDashboardScreen> with Si
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(isDark ? 30 : 6),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             children: [
@@ -2391,13 +2233,6 @@ class _ClothesLogsTab extends StatelessWidget {
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 25 : 5),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2531,13 +2366,6 @@ class _PaymentLogsTab extends StatelessWidget {
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 25 : 5),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
               ),
               child: Row(
                 children: [

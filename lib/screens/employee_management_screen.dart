@@ -9,6 +9,8 @@ import '../models/employee_model.dart';
 import 'employee_detail_screen.dart';
 import 'employee_report_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_ui.dart';
 
 class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
@@ -46,123 +48,17 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0x1E10B981), // Emerald green 12% alpha
-                            Color(0x0A10B981), // Emerald green 4% alpha
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0x3310B981), width: 1),
-                      ),
-                      child: Row(
-                        children: [
-                          if (Navigator.canPop(context)) ...[
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                              color: const Color(0xFF10B981),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              tooltip: 'Back to Home',
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.assignment_ind_rounded, color: Color(0xFF10B981), size: 17),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Attendance Register',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  'Manage check-ins, wages, and offsets',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: colorScheme.onSurfaceVariant.withAlpha(180),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton.filledTonal(
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0x2210B981),
-                                  foregroundColor: const Color(0xFF10B981),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.all(6),
-                                ),
-                                icon: const Icon(Icons.analytics_rounded, size: 18),
-                                tooltip: 'Reports & Analytics',
-                                onPressed: () {
-                                  HapticFeedback.mediumImpact();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const EmployeeReportScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 6),
-                              IconButton.filled(
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFF10B981),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.all(6),
-                                ),
-                                icon: const Icon(Icons.person_add_rounded, size: 18),
-                                tooltip: 'Add Helper',
-                                onPressed: () => _showAddEmployeeDialog(context),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (employeeProvider.isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 14),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(2)),
-                          child: LinearProgressIndicator(
-                            minHeight: 2.5,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+              child: AppPageHeader(
+                title: 'Helper Attendance',
+                subtitle: 'Check-ins, wages and advances',
+                isLoading: employeeProvider.isLoading,
+                actions: [
+                  AppHeaderAction(
+                    icon: Icons.person_add_rounded,
+                    label: 'Add Helper',
+                    onPressed: () => _showAddEmployeeDialog(context),
+                  ),
+                ],
               ),
             ),
           SliverToBoxAdapter(
@@ -225,9 +121,6 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
       ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF059669),
-        foregroundColor: Colors.white,
-        elevation: 3,
         onPressed: () {
           HapticFeedback.mediumImpact();
           Navigator.push(
@@ -237,8 +130,8 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
             ),
           );
         },
-        icon: const Icon(Icons.analytics_rounded, size: 20),
-        label: const Text('Reports & Ledger', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        icon: const Icon(Icons.analytics_rounded, size: 18),
+        label: const Text('Reports & Ledger'),
       ),
     );
   }
@@ -256,26 +149,24 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
             final present = total - absent;
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildGradientSummaryCard(
-                      context,
-                      title: 'Present Today',
+                    child: AppStatTile(
+                      label: 'Present',
                       value: '$present',
                       icon: Icons.check_circle_rounded,
-                      colors: [const Color(0xFF10B981), const Color(0xFF059669)],
+                      color: AppColors.success,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildGradientSummaryCard(
-                      context,
-                      title: 'Absent Today',
+                    child: AppStatTile(
+                      label: 'Absent',
                       value: '$absent',
                       icon: Icons.cancel_rounded,
-                      colors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+                      color: AppColors.danger,
                     ),
                   ),
                 ],
@@ -284,7 +175,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
           },
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
           child: TextField(
             controller: _searchController,
             onChanged: (value) => setState(() => _searchQuery = value),
@@ -306,18 +197,11 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
           ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
+          margin: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(isDark ? 51 : 7),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: TableCalendar(
             firstDay: DateTime(2000),
@@ -447,65 +331,6 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildGradientSummaryCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-    required List<Color> colors,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: colors.first.withAlpha(40),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white70, 
-                    fontSize: 9.5, 
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white, 
-                    fontSize: 15, 
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1497,13 +1322,6 @@ class _CompactEmployeeCard extends StatelessWidget {
           color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 20 : 6),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
         ),
         child: Row(
           children: [

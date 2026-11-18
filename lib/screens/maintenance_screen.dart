@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/appliance_model.dart';
 import '../providers/appliance_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_ui.dart';
 
 class MaintenanceScreen extends StatefulWidget {
   const MaintenanceScreen({super.key});
@@ -196,64 +198,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isDark) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 25 : 5),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: color.withAlpha(isDark ? 35 : 20),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 15),
-            ),
-            const SizedBox(height: 6),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 9.5,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -526,160 +470,50 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Executive Header Banner
-              SafeArea(
-                bottom: false,
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF042F2E), const Color(0xFF134E4A)]
-                          : [const Color(0xFFF0FDFA), const Color(0xFFCCFBF1)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF0D9488) : const Color(0xFF99F6E4),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(isDark ? 30 : 6),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+              AppPageHeader(
+                title: 'Appliances & Services',
+                subtitle: '${appliances.length} ${appliances.length == 1 ? "item" : "items"} • Warranties, refills and dues',
+                isLoading: provider.isLoading,
+                actions: [
+                  AppHeaderAction(
+                    icon: Icons.add_rounded,
+                    label: 'Add Item',
+                    onPressed: () => _showAddApplianceDialog(context),
                   ),
-                  child: Row(
-                    children: [
-                      if (Navigator.canPop(context)) ...[
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 18,
-                            color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488),
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                          tooltip: 'Back to Home',
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0D9488).withAlpha(80),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.propane_tank_rounded, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Services & Utilities',
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF042F2E),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 1.5),
-                            Text(
-                              '${appliances.length} items • Refills, Bills & Dues',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          onTap: () => _showAddApplianceDialog(context),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Ink(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.white.withAlpha(50),
-                                width: 0.8,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0D9488).withAlpha(80),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add_rounded, size: 15, color: Colors.white),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Add Item',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
 
-              // 2. High-Fidelity Stats Row
+              // 2. Stats row
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.fromLTRB(14, 4, 14, 6),
                 child: Row(
                   children: [
-                    _buildStatCard('Total Items', '${appliances.length}', Icons.devices_other_rounded, const Color(0xFF3B82F6), isDark),
+                    Expanded(
+                      child: AppStatTile(
+                        label: 'Items',
+                        value: '${appliances.length}',
+                        icon: Icons.devices_other_rounded,
+                        color: AppColors.info,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    _buildStatCard('Active / Valid', '$activeWarrantyCount', Icons.shield_outlined, const Color(0xFF10B981), isDark),
+                    Expanded(
+                      child: AppStatTile(
+                        label: 'Active',
+                        value: '$activeWarrantyCount',
+                        icon: Icons.verified_user_outlined,
+                        color: AppColors.success,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    _buildStatCard('Total Expense', '₹${totalCostSum.toStringAsFixed(0)}', Icons.handyman_outlined, const Color(0xFFF59E0B), isDark),
+                    Expanded(
+                      child: AppStatTile(
+                        label: 'Spent',
+                        value: '₹${totalCostSum.toStringAsFixed(0)}',
+                        icon: Icons.payments_outlined,
+                        color: AppColors.warning,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -700,19 +534,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   ],
                 ),
               ),
-
-              if (provider.isLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(2)),
-                    child: LinearProgressIndicator(
-                      minHeight: 2.5,
-                      backgroundColor: Colors.transparent,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
-                    ),
-                  ),
-                ),
 
               const SizedBox(height: 4),
 
@@ -817,13 +638,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(isDark ? 25 : 5),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
                                   ),
                                   clipBehavior: Clip.antiAlias,
                                   child: IntrinsicHeight(
@@ -2156,30 +1970,31 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0D9488),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        toolbarHeight: 56,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Text(appliance.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(
-              appliance.name,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text(
-              isService ? 'Home Service / Utility' : 'Appliance Asset',
-              style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.normal),
+              isService ? 'Home service' : 'Appliance',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+            icon: const Icon(Icons.edit_outlined, size: 20),
             tooltip: isService ? 'Edit Service Details' : 'Edit Appliance Specs',
             onPressed: () => _showEditApplianceDialog(context, appliance, isService),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+            icon: const Icon(Icons.delete_outline_rounded, size: 20),
             tooltip: isService ? 'Remove Service' : 'Remove Appliance',
             onPressed: () => _confirmDeleteAppliance(context, appliance, isService),
           ),
@@ -2303,13 +2118,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                     : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                 width: appliance.isRecurringDueActive ? 1.2 : 0.8,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(isDark ? 25 : 5),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2443,13 +2251,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(isDark ? 25 : 5),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2501,13 +2302,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                     : (isExpired ? const Color(0xFFEF4444).withAlpha(80) : const Color(0xFF10B981).withAlpha(80)),
                 width: 1.2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(isDark ? 25 : 5),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2593,13 +2387,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(isDark ? 25 : 5),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3010,13 +2797,6 @@ class _ApplianceServiceDetailScreenState extends State<ApplianceServiceDetailScr
                                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(isDark ? 20 : 4),
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

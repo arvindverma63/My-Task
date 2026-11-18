@@ -481,13 +481,6 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> with Single
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 30 : 6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -771,13 +764,6 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 25 : 5),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,13 +853,6 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 30 : 6),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: TableCalendar(
                 firstDay: DateTime(2000),
@@ -1105,13 +1084,6 @@ class _EmployeeAttendanceTabState extends State<_EmployeeAttendanceTab> {
                           color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: statusColor.withAlpha(isDark ? 90 : 60), width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(isDark ? 25 : 5),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1517,13 +1489,6 @@ class _EmployeePaymentsTab extends StatelessWidget {
                   color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                   width: 1.2,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 40 : 8),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1785,13 +1750,6 @@ class _EmployeePaymentsTab extends StatelessWidget {
                       color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 25 : 5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
                     ),
                     child: Row(
                       children: [

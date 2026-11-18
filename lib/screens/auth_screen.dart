@@ -33,11 +33,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   static const String _apiUrl = 'https://slateblue-guanaco-751834.hostingersite.com/api';
 
-  // Red & White Theme Constants
-  static const Color _crimsonPrimary = Color(0xFFDC2626);
-  static const Color _crimsonDark = Color(0xFFB91C1C);
-  static const Color _crimsonLight = Color(0xFFFEE2E2);
-  static const Color _crimsonSubtle = Color(0xFFFEF2F2);
+  // Brand and error colours
+  static const Color _brand = Color(0xFF0D9488);
+  static const Color _brandDark = Color(0xFF0F766E);
+  static const Color _brandLight = Color(0xFFCCFBF1);
+  static const Color _brandSubtle = Color(0xFFF0FDFA);
+  static const Color _errPrimary = Color(0xFFDC2626);
+  static const Color _errDark = Color(0xFFB91C1C);
+  static const Color _errSubtle = Color(0xFFFEF2F2);
   static const Color _slateBg = Color(0xFFF8FAFC);
   static const Color _slateText = Color(0xFF0F172A);
   static const Color _slateMuted = Color(0xFF64748B);
@@ -255,10 +258,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _crimsonSubtle,
+                color: _brandSubtle,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.security_rounded, color: _crimsonPrimary, size: 22),
+              child: const Icon(Icons.security_rounded, color: _brand, size: 22),
             ),
             const SizedBox(width: 12),
             const Expanded(
@@ -310,7 +313,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.copy_rounded, size: 18, color: _crimsonPrimary),
+                          icon: const Icon(Icons.copy_rounded, size: 18, color: _brand),
                           onPressed: () {
                             Clipboard.setData(const ClipboardData(text: packageName));
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +357,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.copy_rounded, size: 18, color: _crimsonPrimary),
+                          icon: const Icon(Icons.copy_rounded, size: 18, color: _brand),
                           onPressed: () {
                             Clipboard.setData(const ClipboardData(text: sha1Fingerprint));
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -375,7 +378,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
               const Text(
                 'Tip: You can also Sign Up / Sign In directly with a Username & Password or use Guest Mode without any setup.',
-                style: TextStyle(fontSize: 12, color: _crimsonDark, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 12, color: _brandDark, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -383,7 +386,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700, color: _crimsonPrimary)),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700, color: _brand)),
           ),
         ],
       ),
@@ -394,7 +397,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
-        backgroundColor: _crimsonPrimary,
+        backgroundColor: _errPrimary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -415,7 +418,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       ),
       filled: true,
       fillColor: Colors.white,
-      prefixIcon: Icon(prefixIcon, color: _crimsonPrimary.withAlpha(200), size: 19),
+      prefixIcon: Icon(prefixIcon, color: _brand.withAlpha(200), size: 19),
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
@@ -428,15 +431,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _crimsonPrimary, width: 1.5),
+        borderSide: const BorderSide(color: _brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _crimsonPrimary.withAlpha(150)),
+        borderSide: BorderSide(color: _errPrimary.withAlpha(150)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _crimsonPrimary, width: 1.5),
+        borderSide: const BorderSide(color: _errPrimary, width: 1.5),
       ),
     );
   }
@@ -456,7 +459,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _crimsonPrimary.withAlpha(15),
+                color: _brand.withAlpha(15),
               ),
             ),
           ),
@@ -468,7 +471,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _crimsonPrimary.withAlpha(10),
+                color: _brand.withAlpha(10),
               ),
             ),
           ),
@@ -505,20 +508,20 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           margin: const EdgeInsets.only(bottom: 20),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: _crimsonSubtle,
-                            border: Border.all(color: _crimsonPrimary.withAlpha(80)),
+                            color: _errSubtle,
+                            border: Border.all(color: _errPrimary.withAlpha(80)),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.error_outline_rounded, color: _crimsonPrimary, size: 20),
+                              const Icon(Icons.error_outline_rounded, color: _errPrimary, size: 20),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   widget.expirationMessage!,
                                   style: const TextStyle(
-                                    color: _crimsonDark,
+                                    color: _errDark,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12.5,
                                     height: 1.35,
@@ -553,8 +556,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(4),
                                 child: const LinearProgressIndicator(
                                   minHeight: 3,
-                                  backgroundColor: _crimsonLight,
-                                  valueColor: AlwaysStoppedAnimation<Color>(_crimsonPrimary),
+                                  backgroundColor: _brandLight,
+                                  valueColor: AlwaysStoppedAnimation<Color>(_brand),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -572,11 +575,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               child: TabBar(
                                 controller: _tabController,
                                 indicator: BoxDecoration(
-                                  color: _crimsonPrimary,
+                                  color: _brand,
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: _crimsonPrimary.withAlpha(60),
+                                      color: _brand.withAlpha(60),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     )
@@ -667,8 +670,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           onPressed: _handleGuestMode,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 13),
-                            side: const BorderSide(color: _crimsonPrimary, width: 1.2),
-                            backgroundColor: _crimsonSubtle,
+                            side: const BorderSide(color: _brand, width: 1.2),
+                            backgroundColor: _brandSubtle,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -676,12 +679,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.person_outline_rounded, color: _crimsonPrimary, size: 18),
+                              Icon(Icons.person_outline_rounded, color: _brand, size: 18),
                               SizedBox(width: 8),
                               Text(
-                                'Continue as Guest (30-Day Free Trial)',
+                                'Continue as guest (30-day free trial)',
                                 style: TextStyle(
-                                  color: _crimsonPrimary,
+                                  color: _brand,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13.5,
                                 ),
@@ -743,10 +746,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: _crimsonSubtle,
+                      color: _brandSubtle,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.lock_reset_rounded, color: _crimsonPrimary, size: 24),
+                    child: const Icon(Icons.lock_reset_rounded, color: _brand, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -789,18 +792,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: _crimsonSubtle,
+                              color: _errSubtle,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: _crimsonPrimary.withAlpha(80)),
+                              border: Border.all(color: _errPrimary.withAlpha(80)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, size: 16, color: _crimsonPrimary),
+                                const Icon(Icons.error_outline_rounded, size: 16, color: _errPrimary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     dialogError!,
-                                    style: const TextStyle(fontSize: 12, color: _crimsonDark, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(fontSize: 12, color: _errDark, fontWeight: FontWeight.w600),
                                   ),
                                 ),
                               ],
@@ -967,7 +970,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _crimsonPrimary,
+                    backgroundColor: _brand,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -1047,7 +1050,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               child: const Text(
                 'Forgot Password?',
                 style: TextStyle(
-                  color: _crimsonPrimary,
+                  color: _brand,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -1058,7 +1061,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ElevatedButton(
             onPressed: _isLoading ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _crimsonPrimary,
+              backgroundColor: _brand,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 13),
@@ -1147,7 +1150,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ElevatedButton(
             onPressed: _isLoading ? null : _handleRegister,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _crimsonPrimary,
+              backgroundColor: _brand,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 13),

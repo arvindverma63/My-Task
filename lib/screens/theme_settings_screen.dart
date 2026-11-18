@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import '../providers/theme_provider.dart';
+import '../widgets/app_ui.dart';
 import '../utils/session_manager.dart';
 import 'auth_screen.dart';
 import 'user_profile_screen.dart';
@@ -350,13 +351,6 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
             color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
             width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 40 : 8),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -642,19 +636,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Settings & Account',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF0F172A),
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: Column(
         children: [
           if (_isLoadingProfile)
@@ -679,8 +661,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                       _buildUserProfileHeader(isDark),
 
                       // 1. Subscription & Plan
-                      const _SectionLabel(title: 'Plan & Cloud Access', icon: Icons.workspace_premium_rounded),
-                      const SizedBox(height: 8),
+                      const _SectionLabel(title: 'Plan'),
+                      const SizedBox(height: 6),
                       _SettingCard(
                         isDark: isDark,
                         child: ListTile(
@@ -753,23 +735,23 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // 2. Appearance
-                      const _SectionLabel(title: 'Appearance Mode', icon: Icons.palette_rounded),
-                      const SizedBox(height: 8),
+                      const _SectionLabel(title: 'Appearance'),
+                      const SizedBox(height: 6),
                       _buildThemeSelector(settings, isDark),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // 3. Display & Layout Preferences
-                      const _SectionLabel(title: 'Preferences & Regional', icon: Icons.tune_rounded),
-                      const SizedBox(height: 8),
+                      const _SectionLabel(title: 'Preferences'),
+                      const SizedBox(height: 6),
                       _SettingCard(
                         isDark: isDark,
                         child: ListTile(
                           dense: true,
-                          title: const Text('Currency Symbol', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          subtitle: Text('Current currency: ${settings.currency.symbol} (${settings.currency.label})', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                          title: const Text('Currency', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          subtitle: Text('${settings.currency.label} (${settings.currency.symbol})', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                           leading: Container(
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
@@ -792,17 +774,17 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // 4. Tools & Walkthrough
-                      const _SectionLabel(title: 'App Utilities & Tour', icon: Icons.explore_rounded),
-                      const SizedBox(height: 8),
+                      const _SectionLabel(title: 'Help'),
+                      const SizedBox(height: 6),
                       _SettingCard(
                         isDark: isDark,
                         child: ListTile(
                           dense: true,
-                          title: const Text('Start Guided Tour', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          subtitle: Text('Interactive walkthrough of all household modules', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                          title: const Text('Guided tour', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          subtitle: Text('A quick walkthrough of each section', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                           leading: Container(
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
@@ -815,17 +797,17 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                           onTap: widget.onStartTour,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // 5. Account & Session
-                      const _SectionLabel(title: 'Session Management', icon: Icons.account_circle_rounded),
-                      const SizedBox(height: 8),
+                      const _SectionLabel(title: 'Account'),
+                      const SizedBox(height: 6),
                       _SettingCard(
                         isDark: isDark,
                         child: ListTile(
                           dense: true,
                           title: const Text('Log Out', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold, fontSize: 13)),
-                          subtitle: Text('Sign out of your active device session', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                          subtitle: Text('Sign out on this device', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                           leading: Container(
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
@@ -851,7 +833,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                                 border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                               ),
                               child: Text(
-                                'My Task • v2.5.0 Professional Edition',
+                                'Homely • v1.0.0',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -861,7 +843,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Cloud Connected & Synchronized',
+                              'Your data is backed up to the cloud',
                               style: TextStyle(
                                 fontSize: 10.5,
                                 color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
@@ -905,7 +887,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Log Out Session?',
+                'Log out?',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
               ),
               const SizedBox(height: 6),
@@ -960,27 +942,14 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
 
 class _SectionLabel extends StatelessWidget {
   final String title;
-  final IconData icon;
 
-  const _SectionLabel({required this.title, required this.icon});
+  const _SectionLabel({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: const Color(0xFF0D9488)),
-        const SizedBox(width: 6),
-        Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E),
-            fontSize: 10.5,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(left: 2),
+      child: AppSectionLabel(title),
     );
   }
 }
@@ -1001,13 +970,6 @@ class _SettingCard extends StatelessWidget {
           color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 25 : 5),
-            blurRadius: 4,
-            offset: const Offset(0, 1.5),
-          ),
-        ],
       ),
       child: child,
     );
