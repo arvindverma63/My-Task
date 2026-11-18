@@ -622,23 +622,23 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     final statusColor = _isGuest ? AppColors.warning : AppColors.success;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 14, 8),
+      padding: const EdgeInsets.fromLTRB(18, 14, 16, 10),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.home_rounded, color: Colors.white, size: 21),
+            child: const Icon(Icons.home_rounded, color: Colors.white, size: 26),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,24 +649,24 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     Text(
                       'Homelly',
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
+                        letterSpacing: -0.4,
                         height: 1.2,
                         color: AppColors.title(isDark),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: statusColor.withAlpha(isDark ? 45 : 28),
-                        borderRadius: BorderRadius.circular(6),
+                        color: statusColor.withAlpha(isDark ? 50 : 30),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         _isGuest ? 'Guest trial' : 'Active',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: _isGuest
                               ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
@@ -676,10 +676,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 1),
                 Text(
                   '${_getGreeting()}, $_username',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: AppColors.subtitle(isDark),
                   ),
@@ -898,6 +899,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
     return Material(
       color: AppColors.surface(isDark),
+      elevation: isDark ? 0 : 1.5,
+      shadowColor: Colors.black.withAlpha(16),
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(color: AppColors.border(isDark)),
@@ -908,33 +911,33 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         splashColor: accentColor.withAlpha(30),
         highlightColor: accentColor.withAlpha(16),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: accentColor.withAlpha(isDark ? 28 : 16),
-                    borderRadius: BorderRadius.circular(10),
+                    color: accentColor.withAlpha(isDark ? 35 : 20),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: FittedBox(
                     fit: BoxFit.contain,
                     child: Padding(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(8),
                       child: vectorArt,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.2,
                     height: 1.2,
@@ -945,13 +948,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(2, 1, 2, 2),
+                padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
                 child: Text(
                   countBadge,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.subtitle(isDark),
                   ),

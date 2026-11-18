@@ -31,7 +31,7 @@ class AppPageHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(canPop ? 8 : 16, 8, 14, 6),
+            padding: EdgeInsets.fromLTRB(canPop ? 6 : 18, 12, 14, 10),
             child: Row(
               children: [
                 if (canPop) ...[
@@ -39,11 +39,11 @@ class AppPageHeader extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back_rounded, size: 22),
                     color: AppColors.title(isDark),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                     tooltip: 'Back',
                     onPressed: () => Navigator.maybePop(context),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 4),
                 ],
                 Expanded(
                   child: Column(
@@ -55,21 +55,21 @@ class AppPageHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
+                          letterSpacing: -0.4,
                           height: 1.2,
                           color: AppColors.title(isDark),
                         ),
                       ),
                       if (subtitle != null) ...[
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 2),
                         Text(
                           subtitle!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: AppColors.subtitle(isDark),
                           ),
@@ -123,30 +123,30 @@ class AppHeaderAction extends StatelessWidget {
 
     if (label == null) {
       return IconButton(
-        icon: Icon(icon, size: 20),
+        icon: Icon(icon, size: 22),
         tooltip: tooltip,
         onPressed: onPressed,
         color: AppColors.subtitle(isDark),
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
         style: IconButton.styleFrom(
           backgroundColor: isDark ? AppColors.surfaceDark : AppColors.subtle,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
 
     final button = FilledButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16),
+      icon: Icon(icon, size: 18),
       label: Text(label!),
       style: FilledButton.styleFrom(
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
-        minimumSize: const Size(0, 38),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
     return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
@@ -177,6 +177,8 @@ class AppStatTile extends StatelessWidget {
 
     return Material(
       color: AppColors.surface(isDark),
+      elevation: isDark ? 0 : 1,
+      shadowColor: Colors.black.withAlpha(14),
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(color: AppColors.border(isDark)),
@@ -185,49 +187,44 @@ class AppStatTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color.withAlpha(isDark ? 40 : 24),
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withAlpha(isDark ? 50 : 30),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 16),
+                child: Icon(icon, color: color, size: 22),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                          height: 1.15,
-                          color: AppColors.title(isDark),
-                        ),
-                      ),
-                    ),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.subtitle(isDark),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 10),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    height: 1.1,
+                    color: AppColors.title(isDark),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.subtitle(isDark),
                 ),
               ),
             ],
